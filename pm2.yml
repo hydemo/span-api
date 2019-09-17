@@ -1,6 +1,6 @@
 - script: start.sh
   exec_interpreter: "bash"
-  name: ship
+  name: span
   cwd: ./
   watch_options: 
     followSymlinks: false

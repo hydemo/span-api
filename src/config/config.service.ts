@@ -37,6 +37,10 @@ export class ConfigService {
 
       CMS_URL: Joi.string(),
 
+      COMPANY_URL: Joi.string(),
+
+      USER_URL: Joi.string(),
+
       DATABASE_TYPE: Joi.string().default('mongodb'),
 
       DATABASE_HOST: Joi.string().default('localhost'),
@@ -124,6 +128,14 @@ export class ConfigService {
 
   get cms_url(): string {
     return this.envConfig.CMS_URL
+  }
+
+  get company_url(): string {
+    return this.envConfig.COMPANY_URL
+  }
+
+  get user_url(): string {
+    return this.envConfig.USER_URL
   }
 
   get databaseType(): string {
