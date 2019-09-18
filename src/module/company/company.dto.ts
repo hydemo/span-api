@@ -23,10 +23,6 @@ export class CreateCompanyDTO {
   @ApiModelProperty({ description: '联系电话' })
   readonly phone: string;
 
-  @IsString()
-  @Type(() => String)
-  @ApiModelProperty({ description: '企业id' })
-  readonly companyId: string;
 
   @IsString()
   @Type(() => String)
