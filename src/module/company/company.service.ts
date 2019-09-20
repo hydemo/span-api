@@ -149,6 +149,19 @@ export class CompanyService {
     }
   }
 
+  // 注销
+  async getPhoneCode(phone: string) {
+    const replaceStr = phone.substring(4, 8)
+    const str = '*'.repeat(replaceStr.length)
+    const telephone = phone.replace(replaceStr, str)
+    const msg = await this.phonUtil.sendVerificationCode(phone)
+    if (msg) {
+      return { status: 200, code: 2049, phone: telephone }
+    } else {
+      return { status: 400, code: 4042 }
+    }
+  }
+
   // 短信验证码校验
   async phoneCodeCheck(username: string, code: string) {
     const company: any = await this.findByUsername(username)

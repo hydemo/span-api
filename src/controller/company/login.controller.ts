@@ -74,6 +74,17 @@ export class CompanyUserController {
     return await this.companyService.sendPhoneCode(username)
   }
 
+  @Post('/phone/code')
+  @ApiOkResponse({
+    description: '获取短信验证码',
+  })
+  @ApiOperation({ title: '获取短信验证码', description: '获取短信验证码' })
+  async getPhoneCode(
+    @Query('phone') phone: string,
+    @Request() req): Promise<any> {
+    return await this.companyService.getPhoneCode(phone)
+  }
+
   @Post('/phone/codeverification')
   @ApiOkResponse({
     description: '短信验证码校验',
