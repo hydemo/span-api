@@ -74,7 +74,7 @@ export class CompanyUserController {
     return await this.companyService.sendPhoneCode(username)
   }
 
-  @Post('/phone/code')
+  @Get('/phone/code')
   @ApiOkResponse({
     description: '获取短信验证码',
   })
