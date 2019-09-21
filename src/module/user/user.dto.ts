@@ -128,3 +128,28 @@ export class ResetPassDTO {
   @ApiModelProperty({ description: 'token' })
   readonly token: string;
 }
+
+export class EmailPassDTO {
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '用户名' })
+  readonly username: string;
+
+  @IsString()
+  @IsEnum(['zh', 'en-US'])
+  @Type(() => String)
+  @ApiModelProperty({ description: '语言' })
+  readonly language: string;
+}
+
+export class LoginDTO {
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '用户名' })
+  readonly username: string;
+
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '密码' })
+  password: string;
+}
