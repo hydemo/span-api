@@ -1,9 +1,10 @@
 import { Model } from 'mongoose'
 import * as md5 from 'md5'
+import * as fs from 'fs'
 import { RedisService } from 'nestjs-redis'
 import { Inject, Injectable } from '@nestjs/common'
 import { IUser } from './user.interfaces'
-import { CreateUserDTO, ResetPassDTO } from './user.dto'
+import { ResetPassDTO, CreateEmployeeDTO } from './user.dto'
 import { CryptoUtil } from '@utils/crypto.util'
 import { JwtService } from '@nestjs/jwt'
 import { ApiErrorCode } from '@common/enum/api-error-code.enum'
@@ -11,11 +12,20 @@ import { ApiException } from '@common/expection/api.exception'
 import { EmailUtil } from 'src/utils/email.util'
 import { ConfigService } from 'src/config/config.service'
 import { PhoneUtil } from 'src/utils/phone.util'
+import { OrganizationService } from '../organization/organization.service';
+import { XlsxService } from './xlsx.service';
+import { excelTitle } from './title.local'
+import { CheckService } from './check.service';
+import { Pagination } from 'src/common/dto/pagination.dto';
+import { ICompany } from '../company/company.interfaces';
 
 @Injectable()
 export class UserService {
   constructor(
     @Inject('UserModelToken') private readonly userModel: Model<IUser>,
+    @Inject(OrganizationService) private readonly organizationService: OrganizationService,
+    @Inject(XlsxService) private readonly xlsxService: XlsxService,
+    @Inject(CheckService) private readonly checkService: CheckService,
     @Inject(CryptoUtil) private readonly cryptoUtil: CryptoUtil,
     @Inject(JwtService) private readonly jwtService: JwtService,
     @Inject(EmailUtil) private readonly emailUtil: EmailUtil,
@@ -25,15 +35,53 @@ export class UserService {
 
   ) { }
 
-  // 创建数据
-  async create(createUserDTO: CreateUserDTO): Promise<IUser> {
-    const existing = await this.userModel.findOne({ phone: createUserDTO.phone, isDelete: false })
-    if (existing) {
-      throw new ApiException('手机已注册', ApiErrorCode.PHONE_EXIST, 406)
+  async upload(path: string, filename: string, id: string) {
+    const company = await this.organizationService.findById(id);
+    if (!company) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
-    // 新账号创建
-    createUserDTO.password = await this.cryptoUtil.encryptPassword(createUserDTO.password)
-    return await this.userModel.create(createUserDTO)
+    const worksheet = await this.xlsxService.getWorksheet(`${path}/${filename}`);
+    const { headers, headerArray, language, length } =
+      await this.xlsxService.getTitle(worksheet, excelTitle);
+    const users = this.xlsxService.getUsers(worksheet, headers);
+    //isleader检验
+    const checkIslead = await this.checkService.isLeadCheck(users, length);
+    if (checkIslead) {
+      return checkIslead;
+    }
+    //校验user格式
+    const checkResult = this.checkService.userFormateCheck(users, language);
+    if (checkResult) {
+      return checkResult
+    }
+    //校验用户是否存在
+    const exist = await this.checkService.userExistCheck(users, id);
+    if (exist) {
+      return exist
+    }
+    const { layers, layerNames } = await this.xlsxService.getLayer(users, headerArray);
+    //生成组织架构，并返回组织架构
+    const organizations = await this.xlsxService.genOrganization(layers, id);
+    const userObjects = await this.xlsxService.genUser(users, layerNames, organizations, company);
+    const userInfo = await this.xlsxService.addUsers(userObjects);
+    const staffNumber = await this.userModel.countDocuments({ companyId: id, isDelete: false });
+    await this.organizationService.findByIdAndUpdate(id, {
+      layerLength: layerNames.length,
+      staffNumber,
+    })
+    const xlsxPath = `./temp/upload/excel/${filename}`;
+    fs.exists(xlsxPath, (exists) => {
+      if (exists)
+        fs.unlink(xlsxPath, (err) => {
+          console.log(err)
+        });
+    });
+    const data = await this.organizationService.findById(id);
+    return {
+      status: 200,
+      code: 2031,
+      data: { ...data, userInfo },
+    };
   }
 
   // 根据id查找
@@ -186,5 +234,116 @@ export class UserService {
     }
     return res
       .redirect(`${this.config.cms_url}/resetpassword?token=${token}`);
+  }
+
+  // 重置密码token校验
+  async count(condition: any) {
+    return await this.userModel.countDocuments(condition).lean().exec()
+  }
+
+  // 获取员工全部信息
+  async list(pagination: Pagination, id: string, user: ICompany) {
+    const organization = await this.organizationService.findById(id)
+    if (!organization) {
+      return { list: [], total: 0 }
+    }
+    if (String(user.companyId) !== String(organization.companyId)) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const company = await this.organizationService.findById(user.companyId)
+    if (!company) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    let condition: any = {
+      isDelete: false,
+      'layerLine.layerId': id
+    }
+    if (String(id) === String(user.companyId)) {
+      condition = {
+        isDelete: false,
+        companyId: id
+      }
+    }
+    const list = await this.userModel
+      .find(condition)
+      .sort({ layerId: -1 })
+      .limit(pagination.pageSize)
+      .skip((pagination.current - 1) * pagination.pageSize)
+      .populate({ path: 'layerLine.layerId', model: 'organization' })
+      .lean()
+      .exec()
+    const total = await this.userModel.countDocuments(condition).lean().exec()
+    return { layerLength: company.layerLength, list, total }
+  }
+
+  async getLayerLine(id, layerLine) {
+    const organization = await this.organizationService.findById(id)
+    if (!organization) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    if (organization.layer === 0) {
+      return layerLine
+    }
+    const newLayer = {
+      layerName: organization.name,
+      layerId: id,
+      parentId: organization.parent,
+      layer: organization.layer
+    }
+    layerLine.unshift(newLayer)
+    if (organization.parent) {
+      await this.getLayerLine(organization.parent, layerLine)
+    }
+    return layerLine
+  }
+
+  async addEmployee(id: string, employee: CreateEmployeeDTO, user: ICompany) {
+    const organization = await this.organizationService.findById(id)
+    if (!organization) {
+      return { list: [], total: 0 }
+    }
+    if (String(user.companyId) !== String(organization.companyId)) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const company = await this.organizationService.findById(user.companyId)
+    if (!company) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    let layerLine: any = []
+    if (String(id) !== String(user.companyId)) {
+      layerLine.push({
+        layerName: organization.name,
+        layerId: id,
+        parentId: organization.parent,
+        layer: organization.layer
+      })
+      await this.getLayerLine(organization.parent, layerLine)
+    }
+    const userObject: any = {
+      companyId: company._id,
+      companyName: company.name,
+      email: employee.email,
+      layer: organization.layer,
+      layerId: organization._id,
+      layerLine,
+      isLeader: employee.isLeader,
+      "userinfo.fullname": employee.fullname
+    };
+    if (employee.phone) {
+
+      const userExist = await this.userModel.find({ phone: employee.phone, isDelete: false })
+        .lean()
+        .exec();
+      if (userExist.length) {
+        return { status: 400, code: 4032 }
+      }
+      userObject.phone = employee.phone
+    }
+
+    await this.userModel.create(userObject);
+    await this.organizationService.findByIdAndUpdate(company._id, {
+      $inc: { staffNumber: 1 }
+    });
+    return { status: 200, code: 2053 }
   }
 }

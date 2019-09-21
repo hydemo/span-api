@@ -56,7 +56,8 @@
     "rxjs": "^6.2.2",
     "typescript": "^3.0.1",
     "util": "^0.12.1",
-    "weixinpay": "^1.0.12"
+    "weixinpay": "^1.0.12",
+    "xlsx": "^0.15.1"
   },
   "devDependencies": {
     "@nestjs/testing": "^5.1.0",

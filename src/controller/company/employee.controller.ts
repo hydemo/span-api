@@ -1,112 +1,121 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards, Inject, Request, Put, Response, Req, Delete } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards, Inject, Request, Put, Response, UseInterceptors, FileInterceptor, UploadedFile } from '@nestjs/common';
 import {
   ApiUseTags,
   ApiOkResponse,
   ApiForbiddenResponse,
   ApiOperation,
+  ApiConsumes,
+  ApiImplicitFile,
 } from '@nestjs/swagger';
+import * as multer from 'multer'
+import { join } from 'path';
+import { extname } from 'path';
+import * as fs from 'fs';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyService } from 'src/module/company/company.service';
 import { CreateCompanyDTO, CompanyLoginDTO, CompanyResetPassDTO, CompanyEmailPassDTO } from 'src/module/company/company.dto';
+import { MongodIdPipe } from 'src/common/pipe/mongodId.pipe';
+import { UserService } from 'src/module/user/user.service';
+import { Pagination } from 'src/common/dto/pagination.dto';
+import { CreateEmployeeDTO } from 'src/module/user/user.dto';
 
 
 @ApiUseTags('company/employee')
 @ApiForbiddenResponse({ description: 'Unauthorized' })
 
-@Controller('company/employee')
-// @UseGuards(AuthGuard())
-export class CompanyUserController {
+@Controller('company')
+export class CompanyEmployeeController {
   constructor(
-    @Inject(CompanyService) private companyService: CompanyService,
+    @Inject(UserService) private userService: UserService,
   ) { }
 
-  @Post('/register')
-  @ApiOperation({ title: '注册企业', description: '注册企业' })
+  @Get('/employee/template')
+  @ApiOperation({ title: '获取模版', description: '获取模版' })
   async register(
-    @Body() company: CreateCompanyDTO,
-    @Request() req: any
+    @Request() req: any,
+    @Query('language') language: string,
+    @Response() res: any,
   ) {
-    await this.companyService.register(name);
-    return { status: 200, code: 2020 };
+    const userAgent = (req.headers['user-agent'] || '').toLowerCase();
+    let filename;
+    if (language === 'zh') {
+      filename = '模板.xlsx';
+    } else {
+      filename = 'template.xlsx';
+    }
+    const path = `temp/template/${filename}`;
+    let disposition;
+    if (userAgent.indexOf('msie') >= 0 || userAgent.indexOf('chrome') >= 0) {
+      disposition = `attachment; filename=${encodeURIComponent(filename)}`;
+    } else if (userAgent.indexOf('firefox') >= 0) {
+      disposition = `attachment; filename*="utf8''${encodeURIComponent(filename)}"`;
+    } else {
+      /* safari等其他非主流浏览器只能自求多福了 */
+      disposition = `attachment; filename=${new Buffer(filename).toString('binary')}`;
+    }
+    // const disposition = `attachment;filename*=UTF-8"${encodeURI(filename)}`;
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream;charset=utf8',
+      'Content-Disposition': disposition
+    });
+    const stream = fs.createReadStream(path);
+    stream.pipe(res);
+    stream
+      .on('end', () => {
+        return;
+      })
+      .on('error', err => {
+        console.log(err)
+      });
   }
 
-  @Post('/login')
-  @ApiOperation({ title: '注册企业', description: '注册企业' })
-  async login(
-    @Body() login: CompanyLoginDTO,
-    @Request() req: any
-  ) {
-    const clientIp = req.headers['x-real-ip'] ? req.headers['x-real-ip'] : req.ip.replace(/::ffff:/, '');
-    return await this.companyService.login(login.username, login.password, clientIp);
-  }
-
+  @Post('/employee/upload')
   @UseGuards(AuthGuard())
-  @Get('/signout')
-  @ApiOkResponse({
-    description: '登录成功',
-  })
-  @ApiOperation({ title: '登录', description: '登录' })
-  async signout(
-    @Request() req): Promise<any> {
-    await this.companyService.signout(req.user._id)
-    return { status: 200, code: 2002 }
+  @ApiConsumes('multipart/form-data')
+  @ApiImplicitFile({ name: 'file', required: true, description: '修改头像' })
+  @UseInterceptors(FileInterceptor('file', {
+    storage: multer.diskStorage({
+      destination: join('temp/excel')
+      , filename: (req, file, cb) => {
+        const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+        cb(null, `${randomName}${extname(file.originalname)}`);
+      },
+    }),
+  }))
+  async upload(
+    @Request() req,
+    @UploadedFile() file,
+    @Query('company', new MongodIdPipe()) company: string
+  ) {
+    return await this.userService.upload('temp/excel', file.filename, company)
   }
 
-  @Post('/email/password')
-  @ApiOkResponse({
-    description: '邮箱重置密码',
-  })
-  @ApiOperation({ title: '邮箱重置密码', description: '邮箱重置密码' })
-  async sendResetPassEmail(
-    @Body() reset: CompanyEmailPassDTO,
-    @Request() req): Promise<any> {
-    return await this.companyService.sendResetPassEmail(reset.username, reset.language)
+  // 获取部门员工
+  @Get('/:id/employees')
+  @UseGuards(AuthGuard())
+  @ApiOperation({ title: '获取员工列表', description: '获取员工列表' })
+  async getEmployess(
+    @Query() pagination: Pagination,
+    @Param('id', new MongodIdPipe()) id: string,
+    @Request() req: any
+  ) {
+    const data = await this.userService.list(pagination, id, req.user)
+    return { status: 200, data }
   }
 
-  @Post('/phone/activation')
-  @ApiOkResponse({
-    description: '发送短信验证码',
-  })
-  @ApiOperation({ title: '发送短信验证码', description: '发送短信验证码' })
-  async sendPhoneCode(
-    @Body('username') username: string,
-    @Request() req): Promise<any> {
-    return await this.companyService.sendPhoneCode(username)
+  @Post('/:id/employees')
+  @UseGuards(AuthGuard())
+  @ApiOperation({ title: '添加员工', description: '添加员工' })
+  async addEmployess(
+    @Body() employee: CreateEmployeeDTO,
+    @Param('id', new MongodIdPipe()) id: string,
+    @Request() req: any
+  ) {
+    const data = await this.userService.addEmployee(id, employee, req.user)
+    return { status: 200, data }
   }
 
-  @Post('/phone/codeverification')
-  @ApiOkResponse({
-    description: '短信验证码校验',
-  })
-  @ApiOperation({ title: '短信验证码校验', description: '短信验证码校验' })
-  async phoneCodeCheck(
-    @Body('code') code: string,
-    @Body('username') username: string,
-    @Request() req): Promise<any> {
-    return await this.companyService.phoneCodeCheck(username, code)
-  }
 
-  @Put('/passforget')
-  @ApiOkResponse({
-    description: '重置密码',
-  })
-  @ApiOperation({ title: '重置密码', description: '重置密码' })
-  async passforget(
-    @Body() reset: CompanyResetPassDTO,
-  ): Promise<any> {
-    return await this.companyService.resetPassword(reset.username, reset)
-  }
 
-  @Get('/passforget')
-  @ApiOkResponse({
-    description: '重置密码',
-  })
-  @ApiOperation({ title: '重置密码', description: '重置密码' })
-  async forgetTokenCheck(
-    @Query('token') token: string,
-    @Response() res,
-  ): Promise<any> {
-    return await this.companyService.forgetTokenCheck(token, res)
-  }
 
 }

@@ -19,7 +19,7 @@ export const OrganizationSchema = new mongoose.Schema(
     //组织的上层id
     parent: ObjectId,
     //组织的下层id
-    children: [{ ObjectId }],
+    children: [ObjectId],
     //员工数
     staffNumber: { type: Number },
     //生成者id

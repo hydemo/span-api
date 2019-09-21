@@ -7,6 +7,9 @@ import { CryptoUtil } from '@utils/crypto.util';
 import { JwtModule } from '@nestjs/jwt';
 import { EmailUtil } from 'src/utils/email.util';
 import { PhoneUtil } from 'src/utils/phone.util';
+import { XlsxService } from './xlsx.service';
+import { OrganizationModule } from '../organization/organization.module';
+import { CheckService } from './check.service';
 
 @Module({
   providers: [
@@ -14,6 +17,8 @@ import { PhoneUtil } from 'src/utils/phone.util';
     CryptoUtil,
     EmailUtil,
     PhoneUtil,
+    XlsxService,
+    CheckService,
     ...usersProviders,
   ],
   exports: [UserService],
@@ -26,6 +31,7 @@ import { PhoneUtil } from 'src/utils/phone.util';
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     DatabaseModule,
+    OrganizationModule,
   ],
 })
 

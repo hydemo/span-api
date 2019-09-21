@@ -7,6 +7,7 @@ import { CryptoUtil } from '@utils/crypto.util';
 import { JwtModule } from '@nestjs/jwt';
 import { EmailUtil } from 'src/utils/email.util';
 import { PhoneUtil } from 'src/utils/phone.util';
+import { UserModule } from '../user/user.module';
 
 @Module({
   providers: [

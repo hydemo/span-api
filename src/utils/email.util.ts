@@ -16,8 +16,6 @@ export class EmailUtil {
    */
   async sendMail(mailOption) {
     //邮件发送方的设置
-    console.log(this.config.mail_opts, 'mail')
-    console.log(mailOption, 'opthin')
     const transporter =
       nodemail.createTransport(smtpTransport(this.config.mail_opts));
     for (let i = 0; i < 5; i++) {

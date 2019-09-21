@@ -14,6 +14,8 @@ import { CreateOrganizationDTO } from './organization.dto';
 import { Pagination } from 'src/common/dto/pagination.dto';
 import { IList } from 'src/common/interface/list.interface';
 import { IAdmin } from '../admin/admin.interfaces';
+import { ICompany } from '../company/company.interfaces';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class OrganizationService {
@@ -46,6 +48,11 @@ export class OrganizationService {
     return { status: 200, code: 2020, organization: newCompany };
   }
 
+  // 创建子集
+  async creatSub(sub: any) {
+    return await this.organizationModel.create(sub)
+  }
+
   // 创建数据
   async existCheck(name: string) {
     const companyExist = await this.organizationModel.findOne({ name, isDelete: false });
@@ -53,6 +60,21 @@ export class OrganizationService {
       return { status: 400, code: 4033, organization: companyExist };
     }
     return { status: 200 };
+  }
+
+  // 创建数据
+  async findById(id: string): Promise<IOrganization | null> {
+    return await this.organizationModel.findById(id).lean().exec()
+  }
+
+  // 创建数据
+  async findOneByCondition(condition: any): Promise<IOrganization | null> {
+    return await this.organizationModel.findOne(condition).lean().exec()
+  }
+
+  // 创建数据
+  async findByIdAndUpdate(id: string, update: any): Promise<IOrganization | null> {
+    return await this.organizationModel.findByIdAndUpdate(id, update).lean().exec()
   }
 
   // 删除企业
@@ -97,4 +119,100 @@ export class OrganizationService {
     return { companys: list, total };
   }
 
+  // 企业账号获取公司详情
+  async getByCompany(user: ICompany) {
+    return await this.organizationModel
+      .findById(user.companyId)
+      .populate({ path: 'children', model: 'organization', select: '-children' })
+      .lean()
+      .exec()
+  }
+
+  // 企业账号获取公司子集
+  async getChildrenByCompany(parent: string) {
+    return await this.organizationModel
+      .find({ parent, isDelete: false })
+      .select({ children: 0 })
+      .lean()
+      .exec()
+  }
+
+  // 添加子节点
+  async addChildren(parentId: string, name: string) {
+    const exist = await this.organizationModel.findOne({
+      name,
+      parent: parentId,
+    });
+    if (!exist) {
+      const parent = await this.organizationModel.findById(parentId);
+      if (!parent) {
+        throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+      }
+      const org = {
+        companyId: parent.companyId,
+        name,
+        layer: parent.layer + 1,
+        parent,
+        children: [],
+      }
+      const company = await this.organizationModel.findById(parent.companyId);
+      if (company && company.layerLength < parent.layer + 1) {
+        await this.organizationModel
+          .findByIdAndUpdate(parent.companyId, { layerLength: parent.layer + 1 })
+      }
+      const child = await this.organizationModel.create(org);
+      await this.organizationModel.findByIdAndUpdate(parent, { $addToSet: { children: child._id }, hasChildren: true });
+      return { status: 200, child };
+    } else {
+      return { status: 400, code: 4254 }
+    }
+  }
+
+  // 节点重命名
+  async rename(id: string, name: string) {
+    const currentOrg = await this.organizationModel.findById(id);
+    if (!currentOrg) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const exist = await this.organizationModel.findOne({
+      name: name,
+      parent: currentOrg.parent,
+      _id: { $ne: id },
+    });
+    if (exist) {
+      return { status: 400, code: 2054 };
+    } else {
+
+      await this.organizationModel.findByIdAndUpdate(id, { name })
+    }
+    return { status: 200 };
+  }
+
+  // 节点重命名
+  async deleteNode(id: string) {
+    const orgNode = await this.organizationModel.findById(id);
+    if (!orgNode) {
+      return { status: 200 }
+    }
+    if (orgNode.parent) {
+      await this.updateParent(orgNode.parent, orgNode._id)
+    }
+    await this.deleteChildren(id)
+    return await this.organizationModel.findByIdAndDelete(id)
+  }
+
+  // 更新父节点
+  async updateParent(id: string, child: string) {
+    const parent = await this.organizationModel.findById(id)
+    if (!parent) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    let hasChildren = parent.children.length === 1 ? false : true
+    await this.organizationModel.findByIdAndUpdate(id, { $pull: { children: child } })
+  }
+
+  // 删除子节点
+  async deleteChildren(parent: string) {
+    return await this.organizationModel.deleteMany({ parent })
+  }
 }

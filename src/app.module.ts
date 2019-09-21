@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MulterModule } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { InitModule } from './init/init.module';
@@ -25,6 +25,8 @@ import { CMSProjectController } from './controller/cms/project.controller';
 import { ProjectModule } from './module/project/project.module';
 import { UserModule } from './module/user/user.module';
 import { ApiUserController } from './controller/api/login.controller';
+import { CompanyEmployeeController } from './controller/company/employee.controller';
+import { CompanyOrganizationController } from './controller/company/organization.controller';
 
 @Module({
   imports: [
@@ -41,6 +43,7 @@ import { ApiUserController } from './controller/api/login.controller';
     CompanyModule,
     ProjectModule,
     UserModule,
+    MulterModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     RedisModule.forRootAsync({
       useFactory: (configService: ConfigService) => configService.redis,
@@ -61,7 +64,9 @@ import { ApiUserController } from './controller/api/login.controller';
     CMSQuestionnaireController,
     CMSProjectController,
     CompanyUserController,
-    ApiUserController,
+    CompanyEmployeeController,
+    CompanyOrganizationController,
+    // ApiUserController,
   ]
 })
 export class AppModule { }

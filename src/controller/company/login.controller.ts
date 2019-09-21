@@ -26,7 +26,7 @@ export class CompanyUserController {
     @Body() company: CreateCompanyDTO,
     @Request() req: any
   ) {
-    await this.companyService.register(name);
+    await this.companyService.register(company);
     return { status: 200, code: 2020 };
   }
 
