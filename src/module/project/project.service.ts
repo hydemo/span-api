@@ -57,9 +57,6 @@ export class ProjectService {
       if (!questionnaire) {
         throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
       }
-      if (!v.ranges) {
-        return { status: 400, code: 4261 };
-      }
       if (questionnaire.category === 2 && !v.rateeType) {
         return { status: 400, code: 4263 };
       }
@@ -123,6 +120,23 @@ export class ProjectService {
       .sort({ createdAt: -1 })
       .limit(pagination.pageSize)
       .skip((pagination.current - 1) * pagination.pageSize)
+      .lean()
+      .exec()
+    const total = await this.projectModel.countDocuments(condition)
+    return { projects, total };
+  }
+
+  // 企业计划列表
+  async projectsForCompany(pagination: Pagination) {
+
+    const condition = { isArchive: false }
+
+    const projects = await this.projectModel
+      .find(condition)
+      .sort({ createdAt: -1 })
+      .limit(pagination.pageSize)
+      .skip((pagination.current - 1) * pagination.pageSize)
+      .populate({ path: 'questionnaires.questionnaireId', model: 'questionnaire' })
       .lean()
       .exec()
     const total = await this.projectModel.countDocuments(condition)

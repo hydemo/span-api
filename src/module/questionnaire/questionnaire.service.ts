@@ -9,6 +9,8 @@ import { UserfilterService } from '../userfilter/userfilter.service';
 import { UserinfoService } from '../userinfo/userinfo.service';
 import { SubjectService } from '../subject/subject.service';
 import { ScaleService } from '../scale/scale.service';
+import { ApiException } from 'src/common/expection/api.exception';
+import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
 
 @Injectable()
 export class QuestionnaireService {
@@ -399,5 +401,40 @@ export class QuestionnaireService {
   // 增量
   async incReference(id: string, inc: number) {
     return await this.questionnaireModel.findByIdAndUpdate(id, { $inc: { referenceNum: inc } })
+  }
+  // 获取带反馈量表
+  async getScale(id: string) {
+    const questionnaire = await this.questionnaireModel
+      .findById(id)
+      .populate({ path: 'subject', model: 'subject', populate: { path: 'scale', model: 'scale' } })
+      .populate({ path: 'userfilter', model: 'userfilter', populate: { path: 'scale', model: 'scale' } })
+      .lean()
+      .exec()
+    console.log(questionnaire, 'ques')
+    if (!questionnaire) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    let scales: any = [];
+    questionnaire.subject.map(async v => {
+      if (v.scale) {
+        if (v.scale.scaleType === "socialScale") {
+          if (v.scale.socialFeedback && v.scale.socialFeedback.length > 0) {
+            scales.push({ name: v.scale.name, id: v.scale._id });
+          }
+        } else {
+          if (v.scale.feedback && v.scale.feedback.length > 0) {
+            scales.push({ name: v.scale.name, id: v.scale._id });
+          }
+        }
+      }
+    });
+    questionnaire.userfilter.map(async v => {
+      if (v.scale) {
+        if (v.scale.socialFeedback && v.scale.socialFeedback.length > 0) {
+          scales.push({ name: v.scale.name, id: v.scale._id });
+        }
+      }
+    });
+    return scales
   }
 }

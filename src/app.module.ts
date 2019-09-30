@@ -27,6 +27,8 @@ import { UserModule } from './module/user/user.module';
 import { ApiUserController } from './controller/api/login.controller';
 import { CompanyEmployeeController } from './controller/company/employee.controller';
 import { CompanyOrganizationController } from './controller/company/organization.controller';
+import { CompanyProjectController } from './controller/company/project.controller';
+import { CompanyQuestionnaireController } from './controller/company/questionnaire.controller';
 
 @Module({
   imports: [
@@ -66,6 +68,8 @@ import { CompanyOrganizationController } from './controller/company/organization
     CompanyUserController,
     CompanyEmployeeController,
     CompanyOrganizationController,
+    CompanyProjectController,
+    CompanyQuestionnaireController,
     // ApiUserController,
   ]
 })
