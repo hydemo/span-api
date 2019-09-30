@@ -1,7 +1,7 @@
 import { Model } from 'mongoose'
 import { Inject, Injectable } from '@nestjs/common'
 import { IUserProject } from './userProject.interfaces';
-import { CreateUserProjectDTO } from '../userQuestionnaire/userQuestionnaire.dto';
+// import { CreateUserProjectDTO } from '../userQuestionnaire/userQuestionnaire.dto';
 import { Pagination } from 'src/common/dto/pagination.dto';
 import { IAdmin } from '../admin/admin.interfaces';
 
@@ -13,7 +13,7 @@ export class UserProjectService {
   ) { }
 
   // 创建数据
-  async create(userProject: CreateUserProjectDTO) {
+  async create(userProject: any) {
     return await this.userProjectModel.create(userProject)
   }
 
