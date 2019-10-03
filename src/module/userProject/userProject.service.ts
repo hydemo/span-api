@@ -23,15 +23,18 @@ export class UserProjectService {
   }
 
   // 查询全部数据
-  async list(pagination: Pagination, user: string) {
-    const search = [{ userProject: new RegExp(pagination.value || '', "i") }];
-    const condition = { $or: search };
-    return await this.userProjectModel.find(condition)
-      .limit(500)
-      .sort({ userProject: 1 })
-      .select({ userProject: 1 })
+  async list(user: string) {
+    const projects = await this.userProjectModel
+      .find({ isDelete: false, isCompleted: false })
+      .populate({ path: 'project', model: 'project' })
       .lean()
-      .exec();
+      .exec()
+    const completeProjects = await this.userProjectModel
+      .find({ isDelete: false, isCompleted: true })
+      .populate({ path: 'project', model: 'project' })
+      .lean()
+      .exec()
+    return { projects, completeProjects }
   }
 
 }

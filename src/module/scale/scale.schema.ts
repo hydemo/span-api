@@ -26,7 +26,7 @@ export const ScaleSchema = new mongoose.Schema(
     //筛选类型
     filterType: {
       type: String,
-      enum: ["scale", "user", "frequency"]
+      enum: ["scale", "user", "frequency", 'organization']
     },
     //频率筛选条件
     filterScore: { type: Number },

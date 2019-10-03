@@ -29,6 +29,9 @@ import { CompanyEmployeeController } from './controller/company/employee.control
 import { CompanyOrganizationController } from './controller/company/organization.controller';
 import { CompanyProjectController } from './controller/company/project.controller';
 import { CompanyQuestionnaireController } from './controller/company/questionnaire.controller';
+import { UserProjectModule } from './module/userProject/userProject.module';
+import { UserQuestionnaireModule } from './module/userQuestionnaire/userQuestionnaire.module';
+import { CompanyProjectModule } from './module/companyProject/companyProject.module';
 
 @Module({
   imports: [
@@ -46,6 +49,9 @@ import { CompanyQuestionnaireController } from './controller/company/questionnai
     ProjectModule,
     UserModule,
     MulterModule,
+    UserProjectModule,
+    UserQuestionnaireModule,
+    CompanyProjectModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     RedisModule.forRootAsync({
       useFactory: (configService: ConfigService) => configService.redis,
@@ -70,7 +76,7 @@ import { CompanyQuestionnaireController } from './controller/company/questionnai
     CompanyOrganizationController,
     CompanyProjectController,
     CompanyQuestionnaireController,
-    // ApiUserController,
+    ApiUserController,
   ]
 })
 export class AppModule { }

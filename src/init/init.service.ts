@@ -13,7 +13,7 @@ export class InitService {
   ) { }
 
   async init() {
-    // console.log(md5('admin'))
+    console.log(md5('1234567'))
     const adminExist = await this.adminService.countByCondition({})
     if (!adminExist) {
       const admin: CreateAdminDTO = {

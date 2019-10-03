@@ -2,15 +2,15 @@ import { Document } from 'mongoose';
 
 export interface IUserQuestionnaire extends Document {
   //问卷id
-  readonly questionnaireId: string;
+  readonly questionnaire: string;
   //项目id
   companyProject: string;
   //用户id
-  userId: string;
-  //用户名
-  username: string;
-  //用户邮箱
-  email: string;
+  user: string;
+  // //用户名
+  // username: string;
+  // //用户邮箱
+  // email: string;
   //已完成评价的id
   completeRateeId: [string],
   //用户信息答案

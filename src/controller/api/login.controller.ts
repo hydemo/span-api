@@ -14,7 +14,7 @@ import { CreateUserDTO, LoginDTO, ResetPassDTO, EmailPassDTO } from 'src/module/
 @ApiForbiddenResponse({ description: 'Unauthorized' })
 
 @Controller('api/user')
-// @UseGuards(AuthGuard())
+@UseGuards(AuthGuard())
 export class ApiUserController {
   constructor(
     @Inject(UserService) private userService: UserService,

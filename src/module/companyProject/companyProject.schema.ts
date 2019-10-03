@@ -8,6 +8,10 @@ export const CompanyProjectSchema = new mongoose.Schema(
     project: ObjectId,
     // 企业Id
     company: ObjectId,
+    // 是否撤回
+    isWithDraw: { type: Boolean, default: false },
+    // 是否删除
+    isDelete: { type: Boolean, default: false },
     // 问卷设置
     questionnaireSetting: [
       {
@@ -26,7 +30,7 @@ export const CompanyProjectSchema = new mongoose.Schema(
         },
         leaderFeedback: [{
           layer: Number,
-          permissionType:Number
+          permissionType: Number
         }],
       }
     ]

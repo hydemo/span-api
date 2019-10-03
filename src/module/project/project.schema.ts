@@ -30,10 +30,10 @@ export const ProjectSchema = new mongoose.Schema(
       //次数
       frequency: Number,
     },
-    //当前周期数
-    sequence: { type: Number, default: undefined },
+    // //当前周期数
+    // sequence: { type: Number, default: undefined },
 
-    isGroup: { type: Boolean, default: false },
+    // isGroup: { type: Boolean, default: false },
     //归档
     isArchive: { type: Boolean, default: false },
     // 问卷列表

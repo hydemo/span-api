@@ -5,15 +5,15 @@ const ObjectId = mongoose.Types.ObjectId;
 export const UserQuestionnaireSchema = new mongoose.Schema(
   {
     //问卷id
-    questionnaireId: ObjectId,
+    questionnaire: ObjectId,
     //项目id
     companyProject: ObjectId,
     //用户id
-    userId: ObjectId,
-    //用户名
-    username: { type: String },
-    //用户邮箱
-    email: { type: String },
+    user: ObjectId,
+    // //用户名
+    // username: { type: String },
+    // //用户邮箱
+    // email: { type: String },
     //已完成评价的id
     completeRateeId: [String],
     //用户信息答案
@@ -51,6 +51,8 @@ export const UserQuestionnaireSchema = new mongoose.Schema(
     projectStartTime: Date,
     // 计划结束时间
     projectEndTime: Date,
+    // 是否撤回
+    isWithDraw: { type: Boolean, default: false }
   },
   { collection: 'userQuestionnaire', versionKey: false, timestamps: true },
 );

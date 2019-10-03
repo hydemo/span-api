@@ -1,5 +1,6 @@
 import * as  XLSX from "xlsx";
-import { Model } from 'mongoose'
+import { Model } from 'mongoose';
+import * as md5 from 'md5';
 import * as  _ from "lodash";
 import { Injectable, Inject } from "@nestjs/common";
 import { CryptoUtil } from "src/utils/crypto.util";
@@ -154,7 +155,7 @@ export class XlsxService {
             if (user.phone) object.phone = user.phone;
             if (user.password) {
                 Object.assign(object, {
-                    password: this.cryptoUtil.encryptPassword(user.password),
+                    password: this.cryptoUtil.encryptPassword(md5(user.password)),
                     isActive: true
                 });
             }

@@ -7,12 +7,14 @@ import { IAdmin } from '../admin/admin.interfaces';
 import { QuestionnaireService } from '../questionnaire/questionnaire.service';
 import { ApiException } from 'src/common/expection/api.exception';
 import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
+import { ICompany } from '../company/company.interfaces';
+import { CompanyProjectService } from '../companyProject/companyProject.service';
 
 @Injectable()
 export class ProjectService {
   constructor(
     @Inject('ProjectModelToken') private readonly projectModel: Model<IProject>,
-    @Inject(QuestionnaireService) private readonly questionnaireService: QuestionnaireService
+    @Inject(QuestionnaireService) private readonly questionnaireService: QuestionnaireService,
   ) { }
 
   // 创建数据
@@ -220,4 +222,6 @@ export class ProjectService {
     }
     return assigns;
   }
+
+
 }
