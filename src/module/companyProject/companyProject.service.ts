@@ -108,6 +108,7 @@ export class CompanyProjectService {
             choice: [],
             projectStartTime: questionnaire.startTime,
             projectEndTime: questionnaire.endTime,
+            questionnaire: questionnaire.questionnaire,
           })
           await client.hset(`userProject_${id}`, user._id, 1)
         }))

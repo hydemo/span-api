@@ -1,8 +1,9 @@
 import { Document } from 'mongoose';
+import { IQuestionnaire } from '../questionnaire/questionnaire.interfaces';
 
 export interface IUserQuestionnaire extends Document {
   //问卷id
-  readonly questionnaire: string;
+  readonly questionnaire: any;
   //项目id
   companyProject: string;
   //用户id

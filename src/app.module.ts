@@ -32,6 +32,8 @@ import { CompanyQuestionnaireController } from './controller/company/questionnai
 import { UserProjectModule } from './module/userProject/userProject.module';
 import { UserQuestionnaireModule } from './module/userQuestionnaire/userQuestionnaire.module';
 import { CompanyProjectModule } from './module/companyProject/companyProject.module';
+import { ApiProjectController } from './controller/api/project.controller';
+import { ApiQuestionnaireController } from './controller/api/questionnaire.controller';
 
 @Module({
   imports: [
@@ -77,6 +79,8 @@ import { CompanyProjectModule } from './module/companyProject/companyProject.mod
     CompanyProjectController,
     CompanyQuestionnaireController,
     ApiUserController,
+    ApiProjectController,
+    ApiQuestionnaireController,
   ]
 })
 export class AppModule { }

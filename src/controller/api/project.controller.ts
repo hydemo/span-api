@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, Inject, Request, Put, Response, Req, Delete } from '@nestjs/common'
+import { Controller, Get, Query, UseGuards, Inject, Request, Put, Response, Req, Delete, Param } from '@nestjs/common'
 import {
   ApiUseTags,
   ApiOkResponse,
@@ -7,6 +7,8 @@ import {
 } from '@nestjs/swagger'
 import { AuthGuard } from '@nestjs/passport'
 import { UserProjectService } from 'src/module/userProject/userProject.service';
+import { MongodIdPipe } from 'src/common/pipe/mongodId.pipe';
+import { UserQuestionnaireService } from 'src/module/userQuestionnaire/userQuestionnaire.service';
 
 
 @ApiUseTags('api/projects')
@@ -14,9 +16,10 @@ import { UserProjectService } from 'src/module/userProject/userProject.service';
 
 @Controller('api/projects')
 @UseGuards(AuthGuard())
-export class CMSProjectController {
+export class ApiProjectController {
   constructor(
     @Inject(UserProjectService) private userProjectService: UserProjectService,
+    @Inject(UserQuestionnaireService) private userQuestionnaireService: UserQuestionnaireService,
   ) { }
 
   @ApiOkResponse({
@@ -25,10 +28,25 @@ export class CMSProjectController {
   })
   @Get('/')
   @ApiOperation({ title: '问卷计划列表', description: '问卷计划列表' })
-  async sacles(
+  async projects(
     @Request() req: any,
   ) {
     const data = await this.userProjectService.list(req.user._id)
+    return { status: 200, data }
+  }
+
+  @ApiOkResponse({
+    description: '问卷计划列表',
+    isArray: true,
+  })
+  @Get('/:id/questionnaires')
+  @ApiOperation({ title: '问卷计划列表', description: '问卷计划列表' })
+  async questionnaires(
+    @Request() req: any,
+    @Param('id', new MongodIdPipe()) id: string,
+  ) {
+    const userProject = await this.userProjectService.findById(id, req.user._id)
+    const data = await this.userQuestionnaireService.list(userProject)
     return { status: 200, data }
   }
 }

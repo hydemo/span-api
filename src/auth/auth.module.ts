@@ -2,11 +2,10 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-// import { UserModule } from '../api/users/user.module';
 import { AuthStrategy } from './auth.strategy';
 import { AdminModule } from 'src/module/admin/admin.module';
 import { CompanyModule } from 'src/module/company/company.module';
-// import { AdminModule } from '../cms/admin/admin.module';
+import { UserModule } from 'src/module/user/user.module';
 
 @Module({
   providers: [
@@ -14,7 +13,7 @@ import { CompanyModule } from 'src/module/company/company.module';
     AuthStrategy,
   ],
   imports: [
-    // UserModule,
+    UserModule,
     AdminModule,
     CompanyModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),

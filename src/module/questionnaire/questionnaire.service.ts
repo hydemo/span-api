@@ -26,8 +26,8 @@ export class QuestionnaireService {
   async create(questionnaire: CreateQuestionnaireDTO, creator: IAdmin) {
     const {
       questionnaires,
-      userinfos = "",
-      userfilters = "",
+      userinfos = '',
+      userfilters = '',
       subjects
     } = questionnaire;
     const newQuestionnaire = await this.questionnaireModel.create({ ...questionnaires, creatorId: creator._id, creatorName: creator.username });
@@ -129,10 +129,10 @@ export class QuestionnaireService {
   async getUserinfo(id: string) {
     const questionnaire = await this.questionnaireModel.findById(id)
       .populate({
-        path: "userinfo",
-        model: "userinfo",
+        path: 'userinfo',
+        model: 'userinfo',
         populate: {
-          path: "scale"
+          path: 'scale'
         }
       })
       .select({ userinfo: 1 })
@@ -144,6 +144,30 @@ export class QuestionnaireService {
       if (v.scale) return Object.assign(v.scale, { required: v.required });
       else return v;
     });
+  }
+
+  // 获取用户信息题
+  async getUserfilterByUser(id: string, subjectNum: number) {
+    const questionnaire = await this.questionnaireModel.findById(id)
+      .populate({
+        path: 'userfilter',
+        model: 'userfilter',
+        populate: {
+          path: 'scale',
+          model: 'scales'
+        }
+      })
+      .select({ userfilter: 1 })
+      .exec();
+    if (!questionnaire) {
+      return null
+    }
+    const userfilter = questionnaire.userfilter[subjectNum - 1]
+    if (userfilter.scale) {
+      return Object.assign(userfilter.scale, { required: userfilter.required });
+    } else {
+      return userfilter;
+    }
   }
 
   // 获取筛选题
@@ -161,7 +185,7 @@ export class QuestionnaireService {
       if (preuserfilter.scale) {
         preuserfilter = preuserfilter.scale;
       }
-      if (preuserfilter.filterType === "frequency") {
+      if (preuserfilter.filterType === 'frequency') {
         const option = JSON.parse(JSON.stringify(preuserfilter.option));
         const score = preuserfilter.score;
         choiceObject = choiceObject
@@ -192,29 +216,29 @@ export class QuestionnaireService {
       userfilter = userfilter.scale;
     }
     if (subjectNum === 1) {
-      if (userfilter.filterType === "organization") {
+      if (userfilter.filterType === 'organization') {
         for (let i = 0; i < 6; i++) {
           choice.push({
             content: `org${i + 1}`,
-            rateeType: "organization"
+            rateeType: 'organization'
           });
         }
       } else {
         for (let i = 0; i < 6; i++) {
           choice.push({
             content: `user${i + 1}`,
-            rateeType: "user"
+            rateeType: 'user'
           });
         }
       }
     } else if (subjectNum <= questionnaire.userfilter.length) {
-      if (userfilter.filterType !== "organization") {
-        if (preuserfilter.filterType === "organization") {
+      if (userfilter.filterType !== 'organization') {
+        if (preuserfilter.filterType === 'organization') {
           choiceObject.map(v => {
             for (let i = 0; i < 6; i++) {
               choice.push({
                 content: `${v.content}-user${i + 1}`,
-                rateeType: "user"
+                rateeType: 'user'
               });
             }
           });
@@ -222,19 +246,19 @@ export class QuestionnaireService {
           choice = choiceObject;
         }
       } else {
-        if (preuserfilter.filterType === "organization") {
+        if (preuserfilter.filterType === 'organization') {
           choiceObject.map(v => {
             for (let i = 0; i < 6; i++) {
               choice.push({
                 content: `${v.content}-org${i + 1}`,
-                rateeType: "organization"
+                rateeType: 'organization'
               });
             }
           });
         }
       }
     }
-    if (userfilter.filterType !== "frequency") {
+    if (userfilter.filterType !== 'frequency') {
       return {
         subjectType: userfilter.subjectType,
         question: userfilter.question,
@@ -243,7 +267,7 @@ export class QuestionnaireService {
       };
     } else {
       return {
-        subjectType: "scale",
+        subjectType: 'scale',
         guide: userfilter.guide,
         question: choice,
         option: userfilter.option,
@@ -266,13 +290,67 @@ export class QuestionnaireService {
       for (let i = 0; i < 6; i++) {
         choice.push({
           content: `user${i + 1}`,
-          rateeType: "user",
-          id: "",
-          email: ""
+          rateeType: 'user',
+          id: '',
+          email: ''
         });
       }
     }
     const questionnaire = await this.questionnaireModel.findById(id)
+      .populate({
+        path: 'subject',
+        model: 'subject',
+        populate: { path: 'scale', model: 'scale' }
+      })
+      .lean()
+      .exec();
+    const subject = questionnaire.subject.map(v => {
+      if (v.scale) {
+        let subjectType;
+        if (
+          v.scale.scaleType === 'baseScale' ||
+          v.scale.scaleType === 'socialScale'
+        ) {
+          subjectType = 'scale';
+        } else {
+          subjectType = v.scale.subjectType;
+        }
+        return Object.assign(v.scale, {
+          page: v.page,
+          totalPage: v.totalPage,
+          subjectType,
+          required: v.required
+        });
+      } else return v;
+    });
+    if (questionnaire.category === 3 || questionnaire.category === 4) {
+      const question = choice.map(c => {
+        return {
+          _id: c.id,
+          content: c.content,
+          scoreMethod: 'forward',
+          email: c.email,
+          rateeType: c.rateeType
+        };
+      });
+      subject.map(sub => {
+        sub.question = question;
+        sub.subjectType = 'scale';
+        return sub;
+      });
+    }
+    return subject;
+  }
+
+  /**
+  * ----{获取问卷题目}----
+  * @param {String} questionnaireId 问卷id
+  * @param {Array} choice 评价对象
+  * @returns {Promise} promise
+  * @author:oy
+  */
+  async getSubjectByUser(questionnaireId: string, choice: any[]) {
+    const questionnaire = await this.questionnaireModel.findById(questionnaireId)
       .populate({
         path: "subject",
         model: "subject",
@@ -318,7 +396,7 @@ export class QuestionnaireService {
     return subject;
   }
 
-  // 删除企业
+  // 删除问卷
   async deleteById(id: string) {
     const questionnaireExist = await this.questionnaireModel.findById(id);
     if (questionnaireExist && questionnaireExist.referenceNum) {
@@ -363,7 +441,7 @@ export class QuestionnaireService {
 
   // 查询全部数据
   async list(pagination: Pagination, creatorId: string, isArchive: boolean) {
-    const search = [{ name: new RegExp(pagination.value || '', "i") }];
+    const search = [{ name: new RegExp(pagination.value || '', 'i') }];
     const select = {
       name: 1,
       category: 1,
@@ -417,7 +495,7 @@ export class QuestionnaireService {
     let scales: any = [];
     questionnaire.subject.map(async v => {
       if (v.scale) {
-        if (v.scale.scaleType === "socialScale") {
+        if (v.scale.scaleType === 'socialScale') {
           if (v.scale.socialFeedback && v.scale.socialFeedback.length > 0) {
             scales.push({ name: v.scale.name, id: v.scale._id });
           }
