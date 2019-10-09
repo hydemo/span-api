@@ -117,7 +117,7 @@ export class CMSScaleController {
   async getScaleById(
     @Param('id', new MongodIdPipe()) id: string,
   ) {
-    const data = await this.scaleService.getScaleById(id)
+    const data = await this.scaleService.findById(id)
     return { status: 200, data }
   }
 

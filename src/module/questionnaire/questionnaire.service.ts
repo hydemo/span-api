@@ -60,19 +60,21 @@ export class QuestionnaireService {
       await this.questionnaireModel.findByIdAndUpdate(newQuestionnaire._id, { userfilter: userfilterArray })
     }
     //添加用户自定义题目，
-    if (subjects && subjects.length) {
-      let subjectArray: any = []
-      for (let subject of subjects) {
-        let createSubject: any = subject
-        if (subject._id) {
-          await this.scaleService.incReference(subject._id, 1);
-          createSubject = { scale: subject._id }
-        }
-        const newSubject = await this.subjectService.create(createSubject);
-        subjectArray.push(newSubject._id)
+    let subjectArray: any = []
+    for (let subject of subjects) {
+      if (subject._id) {
+        await this.scaleService.incReference(subject._id, 1);
       }
-      await this.questionnaireModel.findByIdAndUpdate(newQuestionnaire._id, { subject: subjectArray })
+
+      const createSubject = {
+        scale: subject._id,
+        page: subject.page,
+        totalPage: subject.totalPage
+      }
+      const newSubject = await this.subjectService.create(createSubject);
+      subjectArray.push(newSubject._id)
     }
+    await this.questionnaireModel.findByIdAndUpdate(newQuestionnaire._id, { subject: subjectArray })
     return { status: 200, code: 2041 };
   }
 

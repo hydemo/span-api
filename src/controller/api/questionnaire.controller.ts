@@ -11,6 +11,7 @@ import { QuestionnaireService } from 'src/module/questionnaire/questionnaire.ser
 import { CreateQuestionnaireDTO } from 'src/module/questionnaire/questionnaire.dto';
 import { MongodIdPipe } from 'src/common/pipe/mongodId.pipe';
 import { UserQuestionnaireService } from 'src/module/userQuestionnaire/userQuestionnaire.service';
+import { UserInfoAnswerDTO, SubjectDTO, UserfilterDTO } from 'src/module/userQuestionnaire/userQuestionnaire.dto';
 
 
 @ApiUseTags('api/questionnaires')
@@ -43,14 +44,51 @@ export class ApiQuestionnaireController {
     return { status: 200, data, }
   }
 
+  @Post('/:id/userinfo')
+  @ApiOperation({ title: '用户信息题', description: '用户信息题' })
+  async userinfoAnswer(
+    @Param('id', new MongodIdPipe()) id: string,
+    @Body() userinfo: UserInfoAnswerDTO,
+    @Request() req: any,
+  ) {
+    console.log(userinfo, 'userinfo')
+    const current = await this.userQuestionnaireService.userinfoAnswer(id, userinfo, req.user._id)
+    return { status: 200, current }
+  }
+
   @Get('/:id/userfilter')
   @ApiOperation({ title: '用户筛选题', description: '用户筛选题' })
   async userfilter(
     @Param('id', new MongodIdPipe()) id: string,
     @Request() req: any,
-    @Query('subjectNum') subjectNum: number,
   ) {
-    const data = await this.userQuestionnaireService.getUserfilter(id, req.user._id, Number(subjectNum))
+    const userQuestionnaire = await this.userQuestionnaireService.canActive(id, req.user._id)
+    const { questionnaire } = userQuestionnaire
+    const data = await this.userQuestionnaireService.getUserfilter(userQuestionnaire, questionnaire.userfilter.length + 1)
+    return { status: 200, data }
+  }
+
+  @Post('/:id/userfilter')
+  @ApiOperation({ title: '提交用户筛选题', description: '提交用户筛选题' })
+  async userfilterAnswer(
+    @Param('id', new MongodIdPipe()) id: string,
+    @Body() userfilter: UserfilterDTO,
+    @Request() req: any,
+  ) {
+    const userQuestionnaire = await this.userQuestionnaireService.canActive(id, req.user._id)
+    const { questionnaire } = userQuestionnaire
+    const data = await this.userQuestionnaireService.userfilterAnswer(userQuestionnaire, userfilter, questionnaire.userfilter.length + 1)
+    return { status: 200, data }
+  }
+
+  @Get('/:id/choice')
+  @ApiOperation({ title: '用户筛选题', description: '用户筛选题' })
+  async choice(
+    @Param('id', new MongodIdPipe()) id: string,
+    @Request() req: any,
+  ) {
+    const userQuestionnaire = await this.userQuestionnaireService.canActive(id, req.user._id)
+    const data = await this.userQuestionnaireService.getChoice(userQuestionnaire)
     return { status: 200, data }
   }
 
@@ -61,6 +99,17 @@ export class ApiQuestionnaireController {
     @Request() req: any,
   ) {
     const data = await this.userQuestionnaireService.getSubject(id, req.user._id)
+    return { status: 200, data }
+  }
+
+  @Post('/:id/subject')
+  @ApiOperation({ title: '主体题', description: '主体题' })
+  async subjectAnswer(
+    @Param('id', new MongodIdPipe()) id: string,
+    @Body() answer: SubjectDTO,
+    @Request() req: any,
+  ) {
+    const data = await this.userQuestionnaireService.subjectAnswer(id, req.user, answer)
     return { status: 200, data }
   }
 

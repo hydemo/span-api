@@ -68,8 +68,12 @@ export class ScaleService {
   }
 
   // 根据id获取详情
-  async getScaleById(id: string) {
-    return await this.scaleModel.findById(id)
+  async findById(id: string) {
+    const scale = await this.scaleModel.findById(id)
+    if (!scale) {
+      throw new ApiException('No Exist', ApiErrorCode.NO_EXIST, 404)
+    }
+    return scale
   }
 
   // 根据id删除

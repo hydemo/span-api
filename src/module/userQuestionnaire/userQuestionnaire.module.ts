@@ -6,6 +6,13 @@ import { CryptoUtil } from '@utils/crypto.util';
 import { EmailUtil } from 'src/utils/email.util';
 import { PhoneUtil } from 'src/utils/phone.util';
 import { QuestionnaireModule } from '../questionnaire/questionnaire.module';
+import { UserModule } from '../user/user.module';
+import { OrganizationModule } from '../organization/organization.module';
+import { ProjectModule } from '../project/project.module';
+import { UserAnswerModule } from '../userAnswer/userAnswer.module';
+import { UserScoreModule } from '../userScore/userScore.module';
+import { OrganizationScoreModule } from '../organizationScore/organizationScore.module';
+import { ScaleModule } from '../scale/scale.module';
 
 @Module({
   providers: [
@@ -19,6 +26,13 @@ import { QuestionnaireModule } from '../questionnaire/questionnaire.module';
   imports: [
     DatabaseModule,
     QuestionnaireModule,
+    UserModule,
+    OrganizationModule,
+    ProjectModule,
+    UserAnswerModule,
+    UserScoreModule,
+    OrganizationScoreModule,
+    ScaleModule,
   ],
 })
 

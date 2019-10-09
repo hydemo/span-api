@@ -34,6 +34,7 @@ import { UserQuestionnaireModule } from './module/userQuestionnaire/userQuestion
 import { CompanyProjectModule } from './module/companyProject/companyProject.module';
 import { ApiProjectController } from './controller/api/project.controller';
 import { ApiQuestionnaireController } from './controller/api/questionnaire.controller';
+import { ApiOrganizationController } from './controller/api/organization.controller';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { ApiQuestionnaireController } from './controller/api/questionnaire.contr
     ApiUserController,
     ApiProjectController,
     ApiQuestionnaireController,
+    ApiOrganizationController,
   ]
 })
 export class AppModule { }
