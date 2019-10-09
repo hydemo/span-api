@@ -120,9 +120,9 @@ export class OrganizationService {
   }
 
   // 企业账号获取公司详情
-  async getByCompany(user: ICompany) {
+  async getByCompany(company: string) {
     return await this.organizationModel
-      .findById(user.companyId)
+      .findById(company)
       .populate({ path: 'children', model: 'organization', select: '-children' })
       .lean()
       .exec()

@@ -24,12 +24,12 @@ export class ApiOrganizationController {
     @Inject(UserService) private userService: UserService,
   ) { }
 
-  @Get('/:id')
+  @Get('/')
   @ApiOperation({ title: '获取公司第一级', description: '获取公司第一级' })
   async organization(
     @Request() req: any,
   ) {
-    const data = await this.organizationService.getByCompany(req.user)
+    const data = await this.organizationService.getByCompany(req.user.companyId)
     return { status: 200, data }
   }
 

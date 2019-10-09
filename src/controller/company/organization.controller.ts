@@ -35,7 +35,7 @@ export class CompanyOrganizationController {
   async organization(
     @Request() req: any,
   ) {
-    const data = await this.organizationService.getByCompany(req.user)
+    const data = await this.organizationService.getByCompany(req.user.companyId)
     return { status: 200, data }
   }
 
