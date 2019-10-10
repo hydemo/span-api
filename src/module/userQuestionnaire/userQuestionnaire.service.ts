@@ -185,7 +185,7 @@ export class UserQuestionnaireService {
             rateeType,
           };
         } else return;
-      });
+      }).filter(v => v);
     } else if (rateeType === 'organization') {
       await Promise.all(
         ratees.map(async child => {
@@ -212,7 +212,8 @@ export class UserQuestionnaireService {
     if (questionnaire.category === 0) {
       return [];
     }
-    const choice = userQuestionnaire.choice.filter(v => !userQuestionnaire.completeRateeId.includes(v.id));
+
+    const choice = userQuestionnaire.choice.filter(v => v && !userQuestionnaire.completeRateeId.includes(v.id));
     if (!choice.length) {
       await this.userQuestionnaireModel.findByIdAndUpdate(userQuestionnaire._id, { isCompleted: true })
     }
