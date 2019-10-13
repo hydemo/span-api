@@ -76,6 +76,13 @@ export class ScaleService {
     return scale
   }
 
+  // 根据id获取详情
+  async find(condition: any): Promise<IScale[]> {
+    return await this.scaleModel.find(condition)
+
+  }
+
+
   // 根据id删除
   async deleteById(id: string) {
     const scale = await this.scaleModel.findById(id)

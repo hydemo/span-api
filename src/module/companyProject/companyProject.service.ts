@@ -14,6 +14,8 @@ import { ICompany } from '../company/company.interfaces';
 import { UserService } from '../user/user.service';
 import { UserQuestionnaireService } from '../userQuestionnaire/userQuestionnaire.service';
 import { UserProjectService } from '../userProject/userProject.service';
+import { ApiException } from 'src/common/expection/api.exception';
+import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
 
 @Injectable()
 export class CompanyProjectService {
@@ -74,9 +76,18 @@ export class CompanyProjectService {
       .exec();
   }
 
-  // 查询全部数据
+  // 根据条件查询单条数据
   async findOne(condition: any) {
     return await this.companyProjectModel.findOne(condition).lean().exec()
+  }
+
+  // 根据id查询单条数据
+  async findById(condition: any): Promise<ICompanyProject> {
+    const companyProject: ICompanyProject = await this.companyProjectModel.findById(condition).lean().exec()
+    if (!companyProject) {
+      throw new ApiException('No Found', ApiErrorCode.NO_EXIST, 404)
+    }
+    return companyProject
   }
 
   async acceptProject(id: string, company: ICompany, questionnaires: any) {

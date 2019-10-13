@@ -35,6 +35,8 @@ import { CompanyProjectModule } from './module/companyProject/companyProject.mod
 import { ApiProjectController } from './controller/api/project.controller';
 import { ApiQuestionnaireController } from './controller/api/questionnaire.controller';
 import { ApiOrganizationController } from './controller/api/organization.controller';
+import { FeedbackModule } from './module/feedback/feedback.module';
+import { ApiFeedbackController } from './controller/api/feedback.controller';
 
 @Module({
   imports: [
@@ -55,6 +57,7 @@ import { ApiOrganizationController } from './controller/api/organization.control
     UserProjectModule,
     UserQuestionnaireModule,
     CompanyProjectModule,
+    FeedbackModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     RedisModule.forRootAsync({
       useFactory: (configService: ConfigService) => configService.redis,
@@ -83,6 +86,7 @@ import { ApiOrganizationController } from './controller/api/organization.control
     ApiProjectController,
     ApiQuestionnaireController,
     ApiOrganizationController,
+    ApiFeedbackController,
   ]
 })
 export class AppModule { }

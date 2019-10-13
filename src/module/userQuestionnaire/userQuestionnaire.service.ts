@@ -47,6 +47,11 @@ export class UserQuestionnaireService {
     return await this.userQuestionnaireModel.countDocuments(condition)
   }
 
+  // 计数
+  async find(condition: any, populate?: any): Promise<IUserQuestionnaire[]> {
+    return await this.userQuestionnaireModel.find(condition).populate(populate).lean().exec()
+  }
+
   // 权限校验
   async canActive(id: string, user: string): Promise<IUserQuestionnaire> {
     const userQuestionnaire = await this.userQuestionnaireModel
