@@ -13,6 +13,7 @@ import { UserAnswerModule } from '../userAnswer/userAnswer.module';
 import { UserScoreModule } from '../userScore/userScore.module';
 import { OrganizationScoreModule } from '../organizationScore/organizationScore.module';
 import { ScaleModule } from '../scale/scale.module';
+import { UserProjectModule } from '../userProject/userProject.module';
 
 @Module({
   providers: [
@@ -33,6 +34,7 @@ import { ScaleModule } from '../scale/scale.module';
     UserScoreModule,
     OrganizationScoreModule,
     ScaleModule,
+    UserProjectModule
   ],
 })
 

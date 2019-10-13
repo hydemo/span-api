@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiForbiddenResponse,
   ApiOperation,
+  ApiBearerAuth,
 } from '@nestjs/swagger'
 import { AuthGuard } from '@nestjs/passport'
 import { Pagination } from 'src/common/dto/pagination.dto'
@@ -16,7 +17,7 @@ import { UserInfoAnswerDTO, SubjectDTO, UserfilterDTO } from 'src/module/userQue
 
 @ApiUseTags('api/questionnaires')
 @ApiForbiddenResponse({ description: 'Unauthorized' })
-
+@ApiBearerAuth()
 @Controller('api/questionnaires')
 @UseGuards(AuthGuard())
 export class ApiQuestionnaireController {
@@ -63,8 +64,8 @@ export class ApiQuestionnaireController {
     @Request() req: any,
   ) {
     const userQuestionnaire = await this.userQuestionnaireService.canActive(id, req.user._id)
-    const { questionnaire } = userQuestionnaire
-    const data = await this.userQuestionnaireService.getUserfilter(userQuestionnaire, questionnaire.userfilter.length + 1)
+    const data = await this.userQuestionnaireService.getUserfilter(userQuestionnaire, userQuestionnaire.userfilterChoice.length + 1)
+    console.log(data, 'data')
     return { status: 200, data }
   }
 
@@ -76,8 +77,7 @@ export class ApiQuestionnaireController {
     @Request() req: any,
   ) {
     const userQuestionnaire = await this.userQuestionnaireService.canActive(id, req.user._id)
-    const { questionnaire } = userQuestionnaire
-    const data = await this.userQuestionnaireService.userfilterAnswer(userQuestionnaire, userfilter, questionnaire.userfilter.length + 1)
+    const data = await this.userQuestionnaireService.userfilterAnswer(userQuestionnaire, userfilter, userQuestionnaire.userfilterChoice.length + 1)
     return { status: 200, data }
   }
 
@@ -110,6 +110,7 @@ export class ApiQuestionnaireController {
     @Request() req: any,
   ) {
     const data = await this.userQuestionnaireService.subjectAnswer(id, req.user, answer)
+
     return { status: 200, data }
   }
 

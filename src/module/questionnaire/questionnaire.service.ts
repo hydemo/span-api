@@ -150,13 +150,14 @@ export class QuestionnaireService {
 
   // 获取用户信息题
   async getUserfilterByUser(id: string, subjectNum: number) {
+    console.log(subjectNum, 'sss')
     const questionnaire = await this.questionnaireModel.findById(id)
       .populate({
         path: 'userfilter',
         model: 'userfilter',
         populate: {
           path: 'scale',
-          model: 'scales'
+          model: 'scale'
         }
       })
       .select({ userfilter: 1 })

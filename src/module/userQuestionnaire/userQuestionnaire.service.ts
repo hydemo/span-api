@@ -20,6 +20,7 @@ import { UserAnswerService } from '../userAnswer/userAnswer.service';
 import { OrganizationScoreService } from '../organizationScore/organizationScore.service';
 import { ScaleService } from '../scale/scale.service';
 import { IScale } from '../scale/sacle.interfaces';
+import { UserProjectService } from '../userProject/userProject.service';
 
 @Injectable()
 export class UserQuestionnaireService {
@@ -33,11 +34,17 @@ export class UserQuestionnaireService {
     @Inject(UserAnswerService) private readonly userAnswerService: UserAnswerService,
     @Inject(OrganizationScoreService) private readonly organizationScoreService: OrganizationScoreService,
     @Inject(ScaleService) private readonly scaleService: ScaleService,
+    @Inject(UserProjectService) private readonly userProjectService: UserProjectService,
   ) { }
 
   // 创建数据
   async create(userQuestionnaire: any): Promise<IUserQuestionnaire> {
     return await this.userQuestionnaireModel.create(userQuestionnaire)
+  }
+
+  // 计数
+  async count(condition: any): Promise<number> {
+    return await this.userQuestionnaireModel.countDocuments(condition)
   }
 
   // 权限校验
@@ -294,24 +301,28 @@ export class UserQuestionnaireService {
   // 获取筛选题
   async getUserfilter(userQuestionnaire: IUserQuestionnaire, subjectNum: number) {
     const userfilter = await this.questionnaireService.getUserfilterByUser(userQuestionnaire.questionnaire, subjectNum)
+    console.log(userfilter, subjectNum, 'userfilter')
+
     if (subjectNum > 1 && userfilter.filterType !== 'frequency') {
       throw new ApiException('No Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
-    if (subjectNum === 1 && userfilter.filterType !== 'user') {
+    if (subjectNum === 1 && userfilter.filterType === 'frequency') {
       throw new ApiException('No Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
+    console.log(subjectNum, 'subjectNumbe')
     if (
       userQuestionnaire.userfilterChoice &&
       userQuestionnaire.userfilterChoice[subjectNum - 2] &&
       userQuestionnaire.userfilterChoice[subjectNum - 2].length > 0
     ) {
       return {
-        subjectType: "scale",
+        filterType: "frequency",
         guide: userfilter.guide,
         question: userQuestionnaire.choice,
         option: userfilter.option,
-        totalPage: userQuestionnaire.questionnaire.userfilter.length
       };
+    } else {
+      return userfilter
     }
   }
 
@@ -341,7 +352,9 @@ export class UserQuestionnaireService {
       const score = currentFilter.score;
       return userfilter.filterChoose
         .map(v => {
-          const index = _.findIndex(option, { _id: v.choose });
+          console.log(option, v.choose, 'sss')
+          const index = _.findIndex(option, function (o) { return String(o._id) === v.choose });
+          console.log(score, index, 'score')
           if (score[index].score >= currentFilter.filterScore) {
             return { content: v.content, email: v.email, id: v.id, rateeType: v.rateeType };
           } else {
@@ -359,12 +372,16 @@ export class UserQuestionnaireService {
   async userfilterAnswer(userQuestionnaire: IUserQuestionnaire, userfilter: UserfilterDTO, subjectNum: number) {
     const { questionnaire } = userQuestionnaire
     const choice = await this.getFilterChoice(userfilter, questionnaire, subjectNum)
-    await this.userQuestionnaireModel.findByIdAndUpdate(userQuestionnaire._id, { choice, $addToSet: { userfilterChoice: userfilter.filterChoose } })
+    const newUserQuestionaire = await this.userQuestionnaireModel
+      .findByIdAndUpdate(userQuestionnaire._id, { choice, $addToSet: { userfilterChoice: userfilter.filterChoose } }, { new: true })
+    if (!newUserQuestionaire) {
+      return null
+    }
     if (userQuestionnaire.userfilterChoice.length + 1 === questionnaire.userfilter.length) {
       await this.userQuestionnaireModel.findByIdAndUpdate(userQuestionnaire._id, { current: 'choice' })
-      return 'choice'
+      return { current: 'choice' }
     } else {
-      const data = await this.getUserfilter(userQuestionnaire, subjectNum + 1)
+      const data = await this.getUserfilter(newUserQuestionaire, subjectNum + 1)
       return { current: 'userfilter', data }
     }
   }
@@ -376,7 +393,7 @@ export class UserQuestionnaireService {
     await this.userQuestionnaireModel.findByIdAndUpdate(id, {
       startTime: Date.now()
     });
-    return await this.questionnaireService.getSubject(userQuestionnaire.questionnaire, userQuestionnaire.choice)
+    return await this.questionnaireService.getSubjectByUser(userQuestionnaire.questionnaire, userQuestionnaire.choice)
   }
 
   // 计算得分
@@ -458,48 +475,49 @@ export class UserQuestionnaireService {
     const projectFile = await this.projectService.findById(project);
     console.log(evaluateNum, 'evalu')
     if (scoreArray.length) {
+      if (userResult.rateeType === "user") {
+        const userScoreObject: any = {
+          userId: userResult.rateeId,
+          username: ratee.userinfo.fullname,
+          email: ratee.email,
+          questionnaire: userResult.questionnaireId,
+          companyProject: userQuestionnaire.companyProject,
+          score: scoreArray,
+          evaluateNum,
+        };
+        //添加周期信息
+        if (projectFile.periodicity) {
+          userScoreObject.sequence = projectFile.sequence;
+        }
+        if (exist) {
+          await this.userScoreService.findByIdAndUpdate(exist._id, userScoreObject);
+        } else {
+          await this.userScoreService.create(userScoreObject);
+        }
+      } else if (userResult.rateeType === 'organization') {
 
-      const userScoreObject: any = {
-        userId: userResult.rateeId,
-        username: ratee.userinfo.fullname,
-        email: ratee.email,
-        questionnaire: userResult.questionnaireId,
-        companyProject: userQuestionnaire.companyProject,
-        score: scoreArray,
-        evaluateNum,
-      };
-      //添加周期信息
-      if (projectFile.periodicity) {
-        userScoreObject.sequence = projectFile.sequence;
-      }
-      if (exist) {
-        await this.userScoreService.findByIdAndUpdate(exist._id, userScoreObject);
-      } else {
-        await this.userScoreService.create(userScoreObject);
-      }
-    } else if (userResult.rateeType === 'organization') {
-
-      const userScoreObject: any = {
-        organizationId: userResult.rateeId,
-        organizationName: ratee.name,
-        // email: userResult.rateeEmail,
-        questionnaire: userResult.questionnaireId,
-        companyId: userResult.companyId,
-        score: scoreArray,
-        evaluateNum,
-        projectId: userResult.projectId
-      };
-      //添加周期信息
-      if (projectFile.periodicity) {
-        userScoreObject.sequence = projectFile.sequence;
-      }
-      if (exist) {
-        await this.organizationScoreService.findByIdAndUpdate(
-          exist._id,
-          userScoreObject
-        );
-      } else {
-        await this.organizationScoreService.create(userScoreObject);
+        const userScoreObject: any = {
+          organizationId: userResult.rateeId,
+          organizationName: ratee.name,
+          // email: userResult.rateeEmail,
+          questionnaire: userResult.questionnaireId,
+          companyId: userResult.companyId,
+          score: scoreArray,
+          evaluateNum,
+          projectId: userResult.projectId
+        };
+        //添加周期信息
+        if (projectFile.periodicity) {
+          userScoreObject.sequence = projectFile.sequence;
+        }
+        if (exist) {
+          await this.organizationScoreService.findByIdAndUpdate(
+            exist._id,
+            userScoreObject
+          );
+        } else {
+          await this.organizationScoreService.create(userScoreObject);
+        }
       }
     }
     const end = moment(Date.now());
@@ -615,11 +633,16 @@ export class UserQuestionnaireService {
     if (questionnaire.category === 2 || questionnaire.category === 1) {
       const choice = await this.getChoice(userQuestionnaire)
       const newChoice = choice.filter(v => v.id !== subjectAnswer.rateeId)
+      await this.userQuestionnaireModel.findByIdAndUpdate(id, { $addToSet: { completeRateeId: subjectAnswer.rateeId } })
       if (newChoice.length) {
         return 'choice'
       }
     }
     await this.userQuestionnaireModel.findByIdAndUpdate(id, { isCompleted: true })
+    const lastCount = await this.userQuestionnaireModel.countDocuments({ companyProject: userQuestionnaire.companyProject, user: user._id, isCompleted: false })
+    if (!lastCount) {
+      await this.userProjectService.complete(userQuestionnaire.companyProject, user._id)
+    }
     return 'completed'
   }
 }

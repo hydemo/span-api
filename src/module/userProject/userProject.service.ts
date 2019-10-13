@@ -50,4 +50,9 @@ export class UserProjectService {
     }
     return project
   }
+
+  // 完成计划
+  async complete(companyProject: string, user: string) {
+    return await this.userProjectModel.findOneAndUpdate({ companyProject, user }, { isCompleted: true })
+  }
 }
