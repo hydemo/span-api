@@ -27,7 +27,7 @@ export class ApiKefusController {
     return 'success'
   }
 
-  @Post('/weixin')
+  @Get('/weixin')
   @ApiOperation({ title: '注册企业', description: '注册企业' })
   async weixin(
     @Query('echostr') echostr: string,
