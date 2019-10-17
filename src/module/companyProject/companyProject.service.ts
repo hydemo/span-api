@@ -81,14 +81,45 @@ export class CompanyProjectService {
     return await this.companyProjectModel.findOne(condition).lean().exec()
   }
 
+  // 根据条件查询数据
+  async find(condition: any) {
+    return await this.companyProjectModel.find(condition).lean().exec()
+  }
+
+  // 根据条件查询数据
+  async findWithProject(condition: any) {
+    return await this.companyProjectModel
+      .find(condition)
+      .populate({ path: 'project', model: 'project' })
+      .lean()
+      .exec()
+  }
+
   // 根据id查询单条数据
-  async findById(condition: any): Promise<ICompanyProject> {
-    const companyProject: ICompanyProject = await this.companyProjectModel.findById(condition).lean().exec()
+  async findById(id: string): Promise<ICompanyProject> {
+    const companyProject: ICompanyProject = await this.companyProjectModel
+      .findById(id)
+      .lean()
+      .exec()
     if (!companyProject) {
       throw new ApiException('No Found', ApiErrorCode.NO_EXIST, 404)
     }
     return companyProject
   }
+
+  // 根据id查询单条数据
+  async findByIdWithProject(id: string): Promise<ICompanyProject> {
+    const companyProject: ICompanyProject = await this.companyProjectModel
+      .findById(id)
+      .populate({ path: 'project', model: 'project' })
+      .lean()
+      .exec()
+    if (!companyProject) {
+      throw new ApiException('No Found', ApiErrorCode.NO_EXIST, 404)
+    }
+    return companyProject
+  }
+
 
   async acceptProject(id: string, company: ICompany, questionnaires: any) {
     console.log(questionnaires, 'ss')
@@ -99,6 +130,7 @@ export class CompanyProjectService {
     const companyProject = await this.companyProjectModel.create({ project: id, company: company.companyId, questionnaireSetting: questionnaires })
     const client = await this.redis.getClient()
     for (let questionnaire of questionnaires) {
+      console.log(questionnaire, 'questionnaire')
       await Promise.all(questionnaire.rater.map(async rater => {
 
         let condition: any = { 'layerLine.layerId': rater, isDelete: false }
@@ -126,6 +158,7 @@ export class CompanyProjectService {
       }))
     }
     const userProjects = await client.hkeys(`userProject_${id}`)
+    console.log(userProjects.length, 'length')
     await Promise.all(userProjects.map(async key => {
       await this.userProjectService.create({
         user: key,

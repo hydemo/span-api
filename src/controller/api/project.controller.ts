@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiForbiddenResponse,
   ApiOperation,
+  ApiBearerAuth,
 } from '@nestjs/swagger'
 import { AuthGuard } from '@nestjs/passport'
 import { UserProjectService } from 'src/module/userProject/userProject.service';
@@ -13,7 +14,7 @@ import { UserQuestionnaireService } from 'src/module/userQuestionnaire/userQuest
 
 @ApiUseTags('api/projects')
 @ApiForbiddenResponse({ description: 'Unauthorized' })
-
+@ApiBearerAuth()
 @Controller('api/projects')
 @UseGuards(AuthGuard())
 export class ApiProjectController {
@@ -31,6 +32,7 @@ export class ApiProjectController {
   async projects(
     @Request() req: any,
   ) {
+    console.log(req.user._id)
     const data = await this.userProjectService.list(req.user._id)
     return { status: 200, data }
   }

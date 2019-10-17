@@ -1,10 +1,11 @@
 import { Document } from 'mongoose';
+import { IProject } from '../project/project.interfaces';
 
 export interface IUserProject extends Document {
   // 企业计划Id
   readonly companyProject: string;
   // 计划Id
-  readonly project: string;
+  readonly project: IProject;
   // 用户id
   readonly user: string;
   // 是否完成

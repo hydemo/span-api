@@ -1,7 +1,6 @@
 import { Model } from 'mongoose'
 import { Inject, Injectable } from '@nestjs/common'
 import { IUserScore } from './userScore.interfaces';
-import { CreateUserScoreDTO } from './userScore.dto';
 
 @Injectable()
 export class UserScoreService {

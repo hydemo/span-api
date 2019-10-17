@@ -11,12 +11,10 @@ export interface IUserScore extends Document {
   readonly questionnaire: string;
   //企业计划id
   readonly companyProject: string;
-  //计划id
-  readonly projectId: string;
+  //部门id
+  readonly layerId: string;
   //分数
   readonly score: [{ score: number, scale: string }];
   //评价数
   readonly evaluateNum: string;
-  //当前周期数
-  readonly sequence: number;
 }

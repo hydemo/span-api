@@ -26,10 +26,20 @@ export class ApiOrganizationController {
 
   @Get('/')
   @ApiOperation({ title: '获取公司第一级', description: '获取公司第一级' })
-  async organization(
+  async organizations(
     @Request() req: any,
   ) {
     const data = await this.organizationService.getByCompany(req.user.companyId)
+    return { status: 200, data }
+  }
+
+  @Get('/:id')
+  @ApiOperation({ title: '获取部门', description: '获取部门' })
+  async organization(
+    @Request() req: any,
+    @Param('id', new MongodIdPipe()) id: string,
+  ) {
+    const data = await this.organizationService.getByCompany(id)
     return { status: 200, data }
   }
 

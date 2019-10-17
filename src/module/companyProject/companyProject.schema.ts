@@ -15,7 +15,7 @@ export const CompanyProjectSchema = new mongoose.Schema(
     // 问卷设置
     questionnaireSetting: [
       {
-        qustionnaire: String,
+        questionnaire: String,
         rater: [String],
         raterType: { type: String, enum: ['staff', 'leader', 'all'] },
         scales: [ObjectId],

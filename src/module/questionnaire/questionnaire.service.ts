@@ -150,7 +150,6 @@ export class QuestionnaireService {
 
   // 获取用户信息题
   async getUserfilterByUser(id: string, subjectNum: number) {
-    console.log(subjectNum, 'sss')
     const questionnaire = await this.questionnaireModel.findById(id)
       .populate({
         path: 'userfilter',
@@ -397,6 +396,29 @@ export class QuestionnaireService {
       });
     }
     return subject;
+  }
+
+  /**
+ * ----{获取问卷题目}----
+ * @param {String} questionnaireId 问卷id
+ * @param {Array} choice 评价对象
+ * @returns {Promise} promise
+ * @author:oy
+ */
+  async getScaleOfSubject(questionnaireId: string) {
+    const questionnaire = await this.questionnaireModel.findById(questionnaireId)
+      .populate({
+        path: "subject",
+        model: "subject",
+        populate: { path: "scale", model: "scale" }
+      })
+      .lean()
+      .exec();
+    return questionnaire.subject.map(v => {
+      if (v.scale) {
+        v.scale
+      } else return v;
+    });
   }
 
   // 删除问卷

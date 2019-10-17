@@ -3,6 +3,7 @@ import { FeedbackService } from './feedback.service';
 import { UserProjectModule } from '../userProject/userProject.module';
 import { CompanyProjectModule } from '../companyProject/companyProject.module';
 import { UserQuestionnaireModule } from '../userQuestionnaire/userQuestionnaire.module';
+import { OrganizationModule } from '../organization/organization.module';
 
 
 @Module({
@@ -14,6 +15,7 @@ import { UserQuestionnaireModule } from '../userQuestionnaire/userQuestionnaire.
     UserProjectModule,
     CompanyProjectModule,
     UserQuestionnaireModule,
+    OrganizationModule,
   ],
 })
 

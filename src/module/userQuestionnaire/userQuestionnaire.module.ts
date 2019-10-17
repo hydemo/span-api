@@ -14,6 +14,7 @@ import { UserScoreModule } from '../userScore/userScore.module';
 import { OrganizationScoreModule } from '../organizationScore/organizationScore.module';
 import { ScaleModule } from '../scale/scale.module';
 import { UserProjectModule } from '../userProject/userProject.module';
+import { UserLinkModule } from '../userLink/userLink.module';
 
 @Module({
   providers: [
@@ -34,7 +35,8 @@ import { UserProjectModule } from '../userProject/userProject.module';
     UserScoreModule,
     OrganizationScoreModule,
     ScaleModule,
-    UserProjectModule
+    UserProjectModule,
+    UserLinkModule,
   ],
 })
 

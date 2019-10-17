@@ -5,6 +5,7 @@ import { DatabaseModule } from '@database/database.module';
 import { CryptoUtil } from '@utils/crypto.util';
 import { EmailUtil } from 'src/utils/email.util';
 import { PhoneUtil } from 'src/utils/phone.util';
+import { UserQuestionnaireModule } from '../userQuestionnaire/userQuestionnaire.module';
 
 @Module({
   providers: [

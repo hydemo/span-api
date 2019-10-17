@@ -21,6 +21,7 @@ import { OrganizationScoreService } from '../organizationScore/organizationScore
 import { ScaleService } from '../scale/scale.service';
 import { IScale } from '../scale/sacle.interfaces';
 import { UserProjectService } from '../userProject/userProject.service';
+import { UserLinkService } from '../userLink/userLink.service';
 
 @Injectable()
 export class UserQuestionnaireService {
@@ -35,6 +36,7 @@ export class UserQuestionnaireService {
     @Inject(OrganizationScoreService) private readonly organizationScoreService: OrganizationScoreService,
     @Inject(ScaleService) private readonly scaleService: ScaleService,
     @Inject(UserProjectService) private readonly userProjectService: UserProjectService,
+    @Inject(UserLinkService) private readonly userLinkService: UserLinkService,
   ) { }
 
   // 创建数据
@@ -306,15 +308,12 @@ export class UserQuestionnaireService {
   // 获取筛选题
   async getUserfilter(userQuestionnaire: IUserQuestionnaire, subjectNum: number) {
     const userfilter = await this.questionnaireService.getUserfilterByUser(userQuestionnaire.questionnaire, subjectNum)
-    console.log(userfilter, subjectNum, 'userfilter')
-
     if (subjectNum > 1 && userfilter.filterType !== 'frequency') {
       throw new ApiException('No Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
     if (subjectNum === 1 && userfilter.filterType === 'frequency') {
       throw new ApiException('No Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
-    console.log(subjectNum, 'subjectNumbe')
     if (
       userQuestionnaire.userfilterChoice &&
       userQuestionnaire.userfilterChoice[subjectNum - 2] &&
@@ -374,13 +373,46 @@ export class UserQuestionnaireService {
 
 
   // 提交用户信息题
-  async userfilterAnswer(userQuestionnaire: IUserQuestionnaire, userfilter: UserfilterDTO, subjectNum: number) {
+  async userfilterAnswer(userQuestionnaire: IUserQuestionnaire, userfilter: UserfilterDTO, subjectNum: number, user: IUser) {
     const { questionnaire } = userQuestionnaire
     const choice = await this.getFilterChoice(userfilter, questionnaire, subjectNum)
     const newUserQuestionaire = await this.userQuestionnaireModel
       .findByIdAndUpdate(userQuestionnaire._id, { choice, $addToSet: { userfilterChoice: userfilter.filterChoose } }, { new: true })
     if (!newUserQuestionaire) {
       return null
+    }
+    const filterData = await this.questionnaireService.getUserfilterByUser(userQuestionnaire.questionnaire, subjectNum)
+    if (filterData.scaleId) {
+      await Promise.all(userfilter.filterChoose.map(async filterChoose => {
+        let score = 1
+        if (filterData.filterType === 'frequency') {
+          const selectIndex = _.findIndex(filterData.option, { _id: filterChoose.choose })
+          score = filterData.score[selectIndex].score;
+        }
+        const newUserLink = {
+          //评价人
+          raterId: user._id,
+          //评价人姓名
+          raterName: user.userinfo.fullname,
+          //被评价人
+          rateeId: filterChoose.id,
+          //被评价人姓名
+          rateeName: filterChoose.content,
+          //问卷id
+          questionnaire: questionnaire._id,
+          //企业id
+          companyProject: userQuestionnaire.companyProject,
+          // 量表id
+          scale: filterData._id,
+          //层级线
+          layerLine: user.layerLine,
+          // 部门id
+          layerId: user.layerId,
+          //分数
+          score,
+        }
+        await this.userLinkService.create(newUserLink)
+      }))
     }
     if (userQuestionnaire.userfilterChoice.length + 1 === questionnaire.userfilter.length) {
       await this.userQuestionnaireModel.findByIdAndUpdate(userQuestionnaire._id, { current: 'choice' })
@@ -478,14 +510,15 @@ export class UserQuestionnaireService {
       }
     }
     const projectFile = await this.projectService.findById(project);
-    console.log(evaluateNum, 'evalu')
     if (scoreArray.length) {
       if (userResult.rateeType === "user") {
         const userScoreObject: any = {
           userId: userResult.rateeId,
+          layerId: ratee.layerId,
+          layerLine: ratee.layerLine,
           username: ratee.userinfo.fullname,
           email: ratee.email,
-          questionnaire: userResult.questionnaireId,
+          questionnaire: userQuestionnaire.questionnaire._id,
           companyProject: userQuestionnaire.companyProject,
           score: scoreArray,
           evaluateNum,
@@ -505,8 +538,8 @@ export class UserQuestionnaireService {
           organizationId: userResult.rateeId,
           organizationName: ratee.name,
           // email: userResult.rateeEmail,
-          questionnaire: userResult.questionnaireId,
-          companyId: userResult.companyId,
+          questionnaire: userQuestionnaire.questionnaire._id,
+          companyProject: userQuestionnaire.companyProject,
           score: scoreArray,
           evaluateNum,
           projectId: userResult.projectId
@@ -568,6 +601,7 @@ export class UserQuestionnaireService {
   async socialAnswer(userQuestionnaire: IUserQuestionnaire, userResult, user: IUser, project: string) {
     const end = moment(Date.now());
     const completeTime = end.diff(userQuestionnaire.startTime, "minutes", true);
+    const scales = await this.questionnaireService.getScaleOfSubject(userQuestionnaire.questionnaire._id)
     await Promise.all(
       userResult.answer[0].choice.map(async (c, i) => {
         const answer: any = [];
@@ -576,13 +610,38 @@ export class UserQuestionnaireService {
         if (!ratee) {
           throw new ApiException('No Found', ApiErrorCode.NO_EXIST, 404)
         }
-        userResult.answer.map(ans => {
+        await Promise.all(userResult.answer.map(async (ans, subjectNum) => {
+          const selectIndex = _.findIndex(scales[subjectNum].option, { _id: ans.choice[i].id })
+          const score = scales[subjectNum].score[selectIndex].score;
+          const newUserLink = {
+            //评价人
+            raterId: user._id,
+            //评价人姓名
+            raterName: user.userinfo.fullname,
+            //被评价人
+            rateeId: ratee._id,
+            //被评价人姓名
+            rateeName: ratee.userinfo.fullname,
+            //问卷id
+            questionnaire: userQuestionnaire.questionnaire._id,
+            //企业id
+            companyProject: userQuestionnaire.companyProject,
+            // 量表id
+            scale: ans.scaleId,
+            //层级线
+            layerLine: user.layerLine,
+            // 部门id
+            layerId: user.layerId,
+            //分数
+            score,
+          }
+          await this.userLinkService.create(newUserLink)
           answer.push({
             type: "social",
             scaleId: ans.scaleId,
             choice: ans.choice[i]
           });
-        });
+        }));
         const result: any = {
           raterId: user._id,
           raterName: user.userinfo.fullname,

@@ -37,6 +37,7 @@ import { ApiQuestionnaireController } from './controller/api/questionnaire.contr
 import { ApiOrganizationController } from './controller/api/organization.controller';
 import { FeedbackModule } from './module/feedback/feedback.module';
 import { ApiFeedbackController } from './controller/api/feedback.controller';
+import { ApiKefusController } from './controller/api/kefu.controller';
 
 @Module({
   imports: [
@@ -87,6 +88,7 @@ import { ApiFeedbackController } from './controller/api/feedback.controller';
     ApiQuestionnaireController,
     ApiOrganizationController,
     ApiFeedbackController,
+    ApiKefusController,
   ]
 })
 export class AppModule { }

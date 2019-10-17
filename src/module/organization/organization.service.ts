@@ -68,8 +68,18 @@ export class OrganizationService {
   }
 
   // 创建数据
+  async findByIdWithChildren(id: string): Promise<IOrganization | null> {
+    return await this.organizationModel.findById(id).lean().exec()
+  }
+
+  // 创建数据
   async findOneByCondition(condition: any): Promise<IOrganization | null> {
     return await this.organizationModel.findOne(condition).lean().exec()
+  }
+
+  // 创建数据
+  async findByCondition(condition: any): Promise<IOrganization[]> {
+    return await this.organizationModel.find(condition).lean().exec()
   }
 
   // 创建数据

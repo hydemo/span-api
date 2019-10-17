@@ -1,9 +1,6 @@
 import { Model } from 'mongoose'
 import { Inject, Injectable } from '@nestjs/common'
 import { IUserProject } from './userProject.interfaces';
-// import { CreateUserProjectDTO } from '../userQuestionnaire/userQuestionnaire.dto';
-import { Pagination } from 'src/common/dto/pagination.dto';
-import { IAdmin } from '../admin/admin.interfaces';
 import { ApiException } from 'src/common/expection/api.exception';
 import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
 
