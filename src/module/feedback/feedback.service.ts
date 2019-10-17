@@ -12,6 +12,7 @@ import { UserScoreService } from '../userScore/userScore.service';
 import { IScale } from '../scale/sacle.interfaces';
 import { OrganizationService } from '../organization/organization.service';
 import { IUserQuestionnaire } from '../userQuestionnaire/userQuestionnaire.interfaces';
+import { UserLinkService } from '../userLink/userLink.service';
 
 @Injectable()
 export class FeedbackService {
@@ -22,6 +23,7 @@ export class FeedbackService {
     @Inject(ScaleService) private readonly scaleService: ScaleService,
     @Inject(UserScoreService) private readonly userScoreService: UserScoreService,
     @Inject(OrganizationService) private readonly organizationService: OrganizationService,
+    @Inject(UserLinkService) private readonly userLinkService: UserLinkService,
   ) { }
 
   // 获取可以看反馈的计划列表
@@ -195,7 +197,7 @@ export class FeedbackService {
       isDelete: false,
       parent: departmentId,
     })
-    await Promise.all(departments.map(async department => {
+    await Promise.all(departments.map(async (department, index) => {
       const depScore = await this.depScore(
         questionnaire,
         companyProject,
@@ -204,10 +206,10 @@ export class FeedbackService {
       )
       console.log(depScore, 'aaa')
       if (depScore.scoreSort.length) {
-        departmentScore.push({
+        departmentScore[index] = {
           name: department.name,
           scores: depScore.scoreSort
-        })
+        }
       }
     }))
     const userScoreAll = await this.userScoreService.findByCondition({
@@ -222,7 +224,7 @@ export class FeedbackService {
         score: scaleScore.score
       })
     })
-    return { departmentScore, userScore }
+    return { departmentScore: departmentScore.filter(v => v), userScore }
   }
 
   // 获取指标的反馈详情
@@ -238,6 +240,12 @@ export class FeedbackService {
       throw new ApiException('No Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
     const scale = await this.scaleService.findById(scaleId)
+    if (scale.scaleType === 'filterScale' || scale.scaleType === 'socialScale') {
+      const companyNet = await this.userLinkService.findByCondition({ scale: scaleId })
+      const myNet = await this.userLinkService.findByCondition({ raterId: user._id, scale: scaleId })
+      const myDepartmentNet = await this.userLinkService.findByCondition({ layerId: user.layerId, scale: scaleId })
+      return { companyNet, myNet, myDepartmentNet }
+    }
     if (!leader) {
       return await this.staffFeedback(project, questionnaire, user, scale, setting)
     } else {

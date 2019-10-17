@@ -4,6 +4,7 @@ import { UserProjectModule } from '../userProject/userProject.module';
 import { CompanyProjectModule } from '../companyProject/companyProject.module';
 import { UserQuestionnaireModule } from '../userQuestionnaire/userQuestionnaire.module';
 import { OrganizationModule } from '../organization/organization.module';
+import { UserLinkModule } from '../userLink/userLink.module';
 
 
 @Module({
@@ -16,6 +17,7 @@ import { OrganizationModule } from '../organization/organization.module';
     CompanyProjectModule,
     UserQuestionnaireModule,
     OrganizationModule,
+    UserLinkModule,
   ],
 })
 

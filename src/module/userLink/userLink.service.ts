@@ -11,6 +11,17 @@ export class UserLinkService {
 
   // 创建数据
   async create(userLink: any): Promise<IUserLink> {
+    const exist = await this.userLinkModel.findOne({
+      raterId: userLink.rateeId,
+      rateeId: userLink.raterId,
+      companyProject: userLink.companyProject,
+      questionnaire: userLink.questionnaire,
+      scale: userLink.scale
+    })
+    if (exist) {
+      userLink.both = true
+      await this.userLinkModel.findByIdAndUpdate(exist._id, { both: true })
+    }
     return await this.userLinkModel.create(userLink)
   }
 
@@ -25,8 +36,8 @@ export class UserLinkService {
   }
 
   // 根据条件查询
-  async findByConditionWithUser(condition: any) {
-    return await this.userLinkModel.find(condition).populate({ path: 'user', model: 'user' }).lean().exec()
+  async findByConditionWithoutUser(condition: any) {
+    return await this.userLinkModel.find(condition).select({ raterName: 0, rateeName: 0 }).lean().exec()
   }
 
   // 根据条件查询
