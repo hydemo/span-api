@@ -21,10 +21,16 @@ export class ApiKefusController {
   @ApiOperation({ title: '注册企业', description: '注册企业' })
   async login(
     @Body() body,
+    @Query('openid') openid: string,
     @Request() req: any
   ) {
     console.log(body)
-    return 'success'
+    return {
+      MsgType: 'transfer_customer_service',
+      ToUserName: openid,
+      FromUserName: 'x314110712',
+      CreateTime: parseInt(String(Date.now() / 1000)),
+    }
   }
 
   @Get('/weixin')
