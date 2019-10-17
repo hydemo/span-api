@@ -25,12 +25,7 @@ export class ApiKefusController {
     @Request() req: any
   ) {
     console.log(body)
-    return {
-      MsgType: 'transfer_customer_service',
-      ToUserName: openid,
-      FromUserName: 'x314110712',
-      CreateTime: parseInt(String(Date.now() / 1000)),
-    }
+    return 'success'
   }
 
   @Get('/weixin')
