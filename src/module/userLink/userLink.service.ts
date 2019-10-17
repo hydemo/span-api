@@ -1,6 +1,6 @@
 import { Model } from 'mongoose'
 import { Inject, Injectable } from '@nestjs/common'
-import { IUserLink } from './userLInk.interfaces';
+import { IUserLink } from './userLink.interfaces';
 
 @Injectable()
 export class UserLinkService {

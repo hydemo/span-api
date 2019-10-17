@@ -77,7 +77,7 @@ export class ApiQuestionnaireController {
     @Request() req: any,
   ) {
     const userQuestionnaire = await this.userQuestionnaireService.canActive(id, req.user._id)
-    const data = await this.userQuestionnaireService.userfilterAnswer(userQuestionnaire, userfilter, userQuestionnaire.userfilterChoice.length + 1)
+    const data = await this.userQuestionnaireService.userfilterAnswer(userQuestionnaire, userfilter, userQuestionnaire.userfilterChoice.length + 1, req.user)
     return { status: 200, data }
   }
 
