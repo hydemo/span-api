@@ -1,4 +1,3 @@
-import { Model } from 'mongoose'
 import * as _ from 'lodash'
 import * as uuid from 'uuid/v4'
 import { Inject, Injectable } from '@nestjs/common'
@@ -13,18 +12,14 @@ import { ApiException } from 'src/common/expection/api.exception';
 import { UserScoreService } from '../userScore/userScore.service';
 import { IScale } from '../scale/sacle.interfaces';
 import { OrganizationService } from '../organization/organization.service';
-import { IUserQuestionnaire } from '../userQuestionnaire/userQuestionnaire.interfaces';
 import { UserLinkService } from '../userLink/userLink.service';
-import { IUserLink } from '../userLink/userLInk.interfaces';
 import { IOrganization } from '../organization/organization.interfaces';
 import { UserService } from '../user/user.service';
 
 @Injectable()
 export class FeedbackService {
   constructor(
-    @Inject(UserProjectService) private readonly userProjectService: UserProjectService,
     @Inject(CompanyProjectService) private readonly companyProjectService: CompanyProjectService,
-    @Inject(UserQuestionnaireService) private readonly userQuestionnaireService: UserQuestionnaireService,
     @Inject(ScaleService) private readonly scaleService: ScaleService,
     @Inject(UserScoreService) private readonly userScoreService: UserScoreService,
     @Inject(OrganizationService) private readonly organizationService: OrganizationService,
