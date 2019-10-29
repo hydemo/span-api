@@ -230,6 +230,10 @@ export class UserQuestionnaireService {
     const choice = userQuestionnaire.choice.filter(v => v && !userQuestionnaire.completeRateeId.includes(v.id));
     if (!choice.length) {
       await this.userQuestionnaireModel.findByIdAndUpdate(userQuestionnaire._id, { isCompleted: true })
+      const lastCount = await this.userQuestionnaireModel.countDocuments({ companyProject: userQuestionnaire.companyProject, user: userQuestionnaire.user, isCompleted: false })
+      if (!lastCount) {
+        await this.userProjectService.complete(userQuestionnaire.companyProject, userQuestionnaire.user)
+      }
     }
     return choice
   }
@@ -254,7 +258,7 @@ export class UserQuestionnaireService {
   async findById(id: string, user: string) {
     const userQuestionnaire = await this.canActive(id, user)
     const questionnaire = userQuestionnaire.questionnaire
-    const current = await this.getCurrent(userQuestionnaire.current, userQuestionnaire.questionnaire)
+    let current = await this.getCurrent(userQuestionnaire.current, userQuestionnaire.questionnaire)
     if ((questionnaire.category === 2 || questionnaire.category === 3) && !userQuestionnaire.choice.length) {
       const fullUserquestionnaire = await this.userQuestionnaireModel
         .findById(id)
@@ -389,15 +393,16 @@ export class UserQuestionnaireService {
           const selectIndex = _.findIndex(filterData.option, { _id: filterChoose.choose })
           score = filterData.score[selectIndex].score;
         }
+        const ratee = await this.userService.findById(filterChoose.id)
         const newUserLink = {
           //评价人
           raterId: user._id,
           //评价人姓名
           raterName: user.userinfo.fullname,
           //被评价人
-          rateeId: filterChoose.id,
+          rateeId: ratee._id,
           //被评价人姓名
-          rateeName: filterChoose.content,
+          rateeName: ratee.userinfo.fullname,
           //问卷id
           questionnaire: questionnaire._id,
           //企业id
@@ -405,18 +410,31 @@ export class UserQuestionnaireService {
           // 量表id
           scale: filterData._id,
           //层级线
-          layerLine: user.layerLine,
+          raterLayerLine: user.layerLine,
           // 部门id
-          layerId: user.layerId,
+          raterLayerId: user.layerId,
+          //层级线
+          rateeLayerLine: ratee.layerLine,
+          // 部门id
+          rateeLayerId: ratee.layerId,
           //分数
           score,
+          // 评价人层级
+          raterLayer: user.layer,
+          // 被评价人层级
+          rateeLayer: ratee.layer,
         }
+        console.log(newUserLink, 'userlink')
         await this.userLinkService.create(newUserLink)
       }))
     }
     if (userQuestionnaire.userfilterChoice.length + 1 === questionnaire.userfilter.length) {
-      await this.userQuestionnaireModel.findByIdAndUpdate(userQuestionnaire._id, { current: 'choice' })
-      return { current: 'choice' }
+      let current = 'choice'
+      if (questionnaire.category === 4) {
+        current = 'subject'
+      }
+      await this.userQuestionnaireModel.findByIdAndUpdate(userQuestionnaire._id, { current })
+      return { current }
     } else {
       const data = await this.getUserfilter(newUserQuestionaire, subjectNum + 1)
       return { current: 'userfilter', data }
@@ -600,8 +618,10 @@ export class UserQuestionnaireService {
   // 非社会网络题
   async socialAnswer(userQuestionnaire: IUserQuestionnaire, userResult, user: IUser, project: string) {
     const end = moment(Date.now());
+    console.log(userResult, 'userResult')
     const completeTime = end.diff(userQuestionnaire.startTime, "minutes", true);
     const scales = await this.questionnaireService.getScaleOfSubject(userQuestionnaire.questionnaire._id)
+    console.log(scales, 'ssss')
     await Promise.all(
       userResult.answer[0].choice.map(async (c, i) => {
         const answer: any = [];
@@ -611,7 +631,9 @@ export class UserQuestionnaireService {
           throw new ApiException('No Found', ApiErrorCode.NO_EXIST, 404)
         }
         await Promise.all(userResult.answer.map(async (ans, subjectNum) => {
-          const selectIndex = _.findIndex(scales[subjectNum].option, { _id: ans.choice[i].id })
+          console.log(scales[subjectNum].option, ans.choice[i], 'ans')
+          const selectIndex = _.findIndex(scales[subjectNum].option, function (o) { return String(o._id) === ans.choice[i].optionId })
+          console.log(selectIndex, 'selectIndex')
           const score = scales[subjectNum].score[selectIndex].score;
           const newUserLink = {
             //评价人
@@ -629,11 +651,19 @@ export class UserQuestionnaireService {
             // 量表id
             scale: ans.scaleId,
             //层级线
-            layerLine: user.layerLine,
+            raterLayerLine: user.layerLine,
             // 部门id
-            layerId: user.layerId,
+            raterLayerId: user.layerId,
+            //层级线
+            rateeLayerLine: ratee.layerLine,
+            // 部门id
+            rateeLayerId: ratee.layerId,
             //分数
             score,
+            // 评价人层级
+            raterLayer: user.layer,
+            // 被评价人层级
+            rateeLayer: ratee.layer,
           }
           await this.userLinkService.create(newUserLink)
           answer.push({
@@ -684,8 +714,8 @@ export class UserQuestionnaireService {
     });
     if (questionnaire.category === 3 || questionnaire.category === 4) {
       await this.socialAnswer(
+        userQuestionnaire,
         subjectAnswer,
-        userQuestionnaire.startTime,
         user,
         fullUserquestionnaire.companyProject.project
       );

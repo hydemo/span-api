@@ -19,7 +19,7 @@ export const UserLinkSchema = new mongoose.Schema(
     // 量表id
     scale: String,
     //层级线
-    layerLine: [{
+    raterLayerLine: [{
       //层级id
       layerId: String,
       //层级
@@ -30,7 +30,22 @@ export const UserLinkSchema = new mongoose.Schema(
       parentId: String,
     }],
     // 部门id
-    layerId: { type: String },
+    raterLayerId: { type: String },
+    raterLayer: { type: Number },
+    rateeLayer: { type: Number },
+    //层级线
+    rateeLayerLine: [{
+      //层级id
+      layerId: String,
+      //层级
+      layer: Number,
+      //组织名称
+      layerName: String,
+      //父节点id
+      parentId: String,
+    }],
+    // 部门id
+    rateeLayerId: { type: String },
     //分数
     score: Number,
     // 双向链接

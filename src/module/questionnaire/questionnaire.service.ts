@@ -66,6 +66,7 @@ export class QuestionnaireService {
         await this.scaleService.incReference(subject._id, 1);
       }
 
+
       const createSubject = {
         scale: subject._id,
         page: subject.page,
@@ -91,6 +92,8 @@ export class QuestionnaireService {
       .populate({ path: 'userinfo', model: 'userinfo', populate: { path: 'scale', model: 'scale' } })
       .populate({ path: 'userfilter', model: 'userfilter', populate: { path: 'scale', model: 'scale' } })
       .populate({ path: 'subject', model: 'subject', populate: { path: 'scale', model: 'scale' } })
+      .lean()
+      .exec()
     if (!fullQuestionnaire) {
       return null
     }
@@ -414,9 +417,10 @@ export class QuestionnaireService {
       })
       .lean()
       .exec();
+    console.log(questionnaire, 'questionnaire')
     return questionnaire.subject.map(v => {
       if (v.scale) {
-        v.scale
+        return v.scale
       } else return v;
     });
   }
@@ -513,11 +517,11 @@ export class QuestionnaireService {
       .populate({ path: 'userfilter', model: 'userfilter', populate: { path: 'scale', model: 'scale' } })
       .lean()
       .exec()
-    console.log(questionnaire, 'ques')
     if (!questionnaire) {
       throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
     let scales: any = [];
+    console.log(questionnaire.subject, 'questionnaire')
     questionnaire.subject.map(async v => {
       if (v.scale) {
         if (v.scale.scaleType === 'socialScale') {

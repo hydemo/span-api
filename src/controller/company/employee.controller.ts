@@ -70,7 +70,7 @@ export class CompanyEmployeeController {
   }
 
   @Post('/employee/upload')
-  @UseGuards(AuthGuard())
+  // @UseGuards(AuthGuard())
   @ApiConsumes('multipart/form-data')
   @ApiImplicitFile({ name: 'file', required: true, description: '修改头像' })
   @UseInterceptors(FileInterceptor('file', {

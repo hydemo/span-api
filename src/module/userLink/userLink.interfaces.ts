@@ -18,7 +18,22 @@ export interface IUserLink extends Document {
   // 双向链接
   readonly both: boolean;
   //层级线
-  readonly layerLine: [{
+  readonly raterLayerLine: [{
+    //层级id
+    layerId: string,
+    //层级
+    layer: number,
+    //组织名称
+    layerName: string,
+    //父节点id
+    parentId: string,
+  }],
+  readonly raterLayer: number;
+  readonly rateeLayer: number;
+  // 部门id
+  readonly raterLayerId: string;
+  //层级线
+  readonly rateeLayerLine: [{
     //层级id
     layerId: string,
     //层级
@@ -29,7 +44,7 @@ export interface IUserLink extends Document {
     parentId: string,
   }],
   // 部门id
-  readonly layerId: string;
+  readonly rateeLayerId: string;
   //分数
   readonly score: number,
 }

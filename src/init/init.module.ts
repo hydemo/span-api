@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { InitService } from './init.service';
 import { AdminModule } from 'src/module/admin/admin.module';
+import { UserLinkModule } from 'src/module/userLink/userLink.module';
 
 @Global()
 @Module({
@@ -9,6 +10,7 @@ import { AdminModule } from 'src/module/admin/admin.module';
   ],
   imports: [
     AdminModule,
+    UserLinkModule,
   ],
   exports: [InitService],
 })
