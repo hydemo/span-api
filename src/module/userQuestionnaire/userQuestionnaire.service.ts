@@ -424,7 +424,6 @@ export class UserQuestionnaireService {
           // 被评价人层级
           rateeLayer: ratee.layer,
         }
-        console.log(newUserLink, 'userlink')
         await this.userLinkService.create(newUserLink)
       }))
     }

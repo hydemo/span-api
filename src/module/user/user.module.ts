@@ -21,7 +21,7 @@ import { CheckService } from './check.service';
     CheckService,
     ...usersProviders,
   ],
-  exports: [UserService],
+  exports: [UserService, XlsxService],
   imports: [
     JwtModule.register({
       secretOrPrivateKey: 'secretKey',

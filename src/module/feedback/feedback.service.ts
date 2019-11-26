@@ -389,7 +389,7 @@ export class FeedbackService {
     const myLinkNodes: any[] = []
     let myLinkCategorys: any[] = []
     const client = this.redis.getClient()
-    await Promise.all(links.map(async (link) => {
+    const newLink = await Promise.all(links.map(async (link) => {
       if (String(userId) === link.raterId || String(userId) === link.rateeId) {
         myLinks.push(link)
         myLinkNodeUsers.push(link.raterId)
@@ -409,6 +409,7 @@ export class FeedbackService {
       if (link.raterLayer !== link.rateeLayer) {
         await client.hincrby(`userScore_otherLayer${uid}`, link.rateeId, 1)
       }
+      return { rater: link.rater, ratee: link.ratee, scord: link.score }
     }))
     const categoryKeys = await client.hkeys(`category${uid}`)
     const categorys = await Promise.all(categoryKeys.map(async key => {
@@ -461,7 +462,7 @@ export class FeedbackService {
     await client.del(`userScore_otherDep${uid}`)
     await client.del(`userScore_otherLayer${uid}`)
     const indicator = this.getMyIndicator(nodes, userId, scale)
-    return { categorys, nodes, links, max, indicator, myLinks, myLinkNodes, myLinkCategorys }
+    return { categorys, nodes, links: newLink, max, indicator, myLinks: myLinks.map(v => ({ rater: v.rater, ratee: v.ratee, score: v.score })), myLinkNodes, myLinkCategorys }
 
   }
 
@@ -469,7 +470,7 @@ export class FeedbackService {
     const uid = uuid()
     const links = await this.userLinkService.findByCondition(condition)
     const client = this.redis.getClient()
-    await Promise.all(links.map(async (link) => {
+    const newLink = await Promise.all(links.map(async (link) => {
       let raterCategory = { id: String(organization._id), name: organization.name };
       let rateeCategory = { id: String(organization._id), name: organization.name };
       if (link.raterLayerLine.length > organization.layer) {
@@ -483,6 +484,7 @@ export class FeedbackService {
       await client.hset(`category${uid}`, rateeCategory.id, rateeCategory.name)
       await client.hset(`user${uid}`, link.rateeId, JSON.stringify({ id: link.rateeId, username: link.rateeName, category: rateeCategory.id }))
       await client.hincrby(`userScore${uid}`, link.rateeId, link.score)
+      return { rater: link.rater, ratee: link.ratee, score: link.score }
     }))
 
     const categoryKeys = await client.hkeys(`category${uid}`)
@@ -509,7 +511,7 @@ export class FeedbackService {
     await client.del(`user${uid}`)
     await client.del(`category${uid}`)
     await client.del(`userScore${uid}`)
-    return { userCategorys: categorys, userNodes: nodes, userLinks: links, userMax: max }
+    return { userCategorys: categorys, userNodes: nodes, userLinks: newLink, userMax: max }
   }
 
   async departmentNetByLeader(condition: any, organization: IOrganization, scale: IScale) {

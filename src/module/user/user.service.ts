@@ -245,6 +245,11 @@ export class UserService {
   async findByCondition(condition: any) {
     return await this.userModel.find(condition).lean().exec()
   }
+  // 根据条件查询
+  async findOneByCondition(condition: any) {
+    return await this.userModel.findOne(condition).lean().exec()
+  }
+
 
   // 获取员工全部信息
   async list(pagination: Pagination, id: string, user: ICompany) {
