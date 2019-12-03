@@ -409,7 +409,7 @@ export class FeedbackService {
       if (link.raterLayer !== link.rateeLayer) {
         await client.hincrby(`userScore_otherLayer${uid}`, link.rateeId, 1)
       }
-      return { id: link._id, source: link.raterId, target: link.rateeId, weight: link.score }
+      return { id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score }
     }))
     const categoryKeys = await client.hkeys(`category${uid}`)
     const categorys = await Promise.all(categoryKeys.map(async key => {
@@ -462,7 +462,7 @@ export class FeedbackService {
     await client.del(`userScore_otherDep${uid}`)
     await client.del(`userScore_otherLayer${uid}`)
     const indicator = this.getMyIndicator(nodes, userId, scale)
-    return { categorys, nodes, links: newLink, max, indicator, myLinks: myLinks.map(v => ({ id: v._id, source: v.raterId, target: v.rateeId, weight: v.score })), myLinkNodes, myLinkCategorys }
+    return { categorys, nodes, links: newLink, max, indicator, myLinks: myLinks.map(v => ({ id: String(v._id), source: String(v.raterId), target: String(v.rateeId), weight: v.score })), myLinkNodes, myLinkCategorys }
 
   }
 
@@ -484,7 +484,7 @@ export class FeedbackService {
       await client.hset(`category${uid}`, rateeCategory.id, rateeCategory.name)
       await client.hset(`user${uid}`, link.rateeId, JSON.stringify({ id: link.rateeId, username: link.rateeName, category: rateeCategory.id }))
       await client.hincrby(`userScore${uid}`, link.rateeId, link.score)
-      return { id: link._id, source: link.raterId, target: link.rateeId, weight: link.score }
+      return { id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score }
     }))
 
     const categoryKeys = await client.hkeys(`category${uid}`)
@@ -618,7 +618,7 @@ export class FeedbackService {
         const weight = Number(await client.hget(`link${uid}-${source.id}`, target) || 0)
         if (weight) {
           departmentLinks.push({
-            source: source.id,
+            source: String(source.id),
             target,
             weight,
           })
