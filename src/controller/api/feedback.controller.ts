@@ -74,6 +74,6 @@ export class ApiFeedbackController {
   ) {
 
     const data = await this.feedbackService.feedback(id, questionnaireId, scaleId, Number(leader), req.user, departmentId)
-    return { status: 200, data }
+    return { status: 200, data: JSON.stringify(data) }
   }
 }
