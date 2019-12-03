@@ -409,7 +409,7 @@ export class FeedbackService {
       if (link.raterLayer !== link.rateeLayer) {
         await client.hincrby(`userScore_otherLayer${uid}`, link.rateeId, 1)
       }
-      return { id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score }
+      return `${{ id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score }}`
     }))
     const categoryKeys = await client.hkeys(`category${uid}`)
     const categorys = await Promise.all(categoryKeys.map(async key => {
