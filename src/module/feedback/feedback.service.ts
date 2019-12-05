@@ -402,6 +402,7 @@ export class FeedbackService {
         })
       }
       const raterExist = nodes.find(o => o.id === String(link.raterId))
+      console.log(raterExist, 'raterExist')
       if (!raterExist) {
         nodes.push({
           id: String(link.raterId),
@@ -420,6 +421,7 @@ export class FeedbackService {
       }
 
       const rateeExist = nodes.find(o => o.id === String(link.rateeId))
+      console.log(rateeExist, 'raterExist')
       if (!rateeExist) {
         nodes.push({
           id: String(link.raterId),
