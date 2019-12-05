@@ -313,42 +313,15 @@ export class FeedbackService {
     }
   }
 
-
-
-  async getDepartmentNet(condition: any, layer: number, nameVisible: boolean, userId: string, scale: IScale) {
-    const uid = uuid()
-    const links = await this.userLinkService.findByCondition(condition)
-    if (!links.length) {
-      return null
-    }
-    const client = this.redis.getClient()
-    await Promise.all(links.map(async (link) => {
-      await client.hset(`user${uid}`, link.raterId, JSON.stringify({ id: link.raterId, username: link.raterName, category: link.raterLayerLine[layer].layerId }))
-      await client.hset(`user${uid}`, link.rateeId, JSON.stringify({ id: link.rateeId, username: link.rateeName, category: link.rateeLayerLine[layer].layerId }))
-      await client.hincrby(`userScore${uid}`, link.rateeId, link.score)
-      await client.hincrby(`linkCount${uid}`, link.rateeId, 1)
-    }))
-    const users = await client.hkeys(`user${uid}`)
-    const nodes = await Promise.all(users.map(async node => {
-      const user = JSON.parse(await client.hget(`user${uid}`, node) || '')
-      let score = Number(await client.hget(`userScore${uid}`, node) || '0')
-      let linkCount = Number(await client.hget(`linkCount${uid}`, node) || '0')
-      const myChoose = _.filter(links, { raterId: node })
-      const myChooseCount = myChoose.length
-      const bothChoose = _.filter(links, { raterId: node, both: true })
-      const bothChooseCount = bothChoose.length
+  getDepartmentNet(users: any, userId: string, scale: IScale) {
+    const nodes = users.map(node => {
       return {
-        id: user.id,
-        name: nameVisible ? user.username : '',
-        linkCount,
-        value: score,
-        reciprocity_dep: myChooseCount > 0 ? bothChooseCount / myChooseCount * 100 : 0,
+        id: node.id,
+        linkCount: node.linkCount,
+        value: node.score,
+        reciprocity_dep: node.myChoose > 0 ? node.bothChoose / node.myChoose * 100 : 0,
       }
-    }))
-    await client.del(`user${uid}`)
-    await client.del(`userScore${uid}`)
-    await client.del(`linkCount${uid}`)
-
+    })
     const me = _.find(nodes, { id: String(userId) })
 
     const linkCountSort = _.orderBy(nodes, 'linkCount', 'desc')
@@ -378,9 +351,7 @@ export class FeedbackService {
 
   }
 
-  async getCompanyNet(condition: any, layer: number, nameVisible: boolean, userId: string, scale: IScale) {
-    // const uid = uuid()
-    console.log('!!!!!!!!!!!!!!!!!!!!!!!!')
+  async getCompanyNet(condition: any, layer: number, nameVisible: boolean, userId: string, scale: IScale, layerId: string) {
     const indexObject = {}
     const links = await this.userLinkService.findByCondition(condition)
     let myLinkNodeUsers: any[] = []
@@ -389,14 +360,19 @@ export class FeedbackService {
     let myLinkCategorys: any[] = []
     const nodes: any[] = []
     const categorys: any[] = []
-    const start = Date.now()
-    console.log('start:', start)
-    // const client = this.redis.getClient()
+    const departIndexObject = {}
+    const departmentUsers: any = []
     const newLink = links.map((link) => {
       if (_.findIndex(categorys, { id: String(link.raterLayerLine[layer].layerId) }) < 0) {
         categorys.push({
           id: String(link.raterLayerLine[layer].layerId),
           name: link.raterLayerLine[layer].layerName
+        })
+      }
+      if (_.findIndex(categorys, { id: String(link.rateeLayerLine[layer].layerId) }) < 0) {
+        categorys.push({
+          id: String(link.rateeLayerLine[layer].layerId),
+          name: link.raterLayeeLine[layer].layerName
         })
       }
       const raterIndex = indexObject[String(link.raterId)]
@@ -418,12 +394,12 @@ export class FeedbackService {
         nodes[raterIndex].bothChoose += link.both ? 1 : 0
       }
 
-      const rateeIndex = indexObject[String(link.raterId)]
+      const rateeIndex = indexObject[String(link.rateeId)]
       if (!rateeIndex && rateeIndex !== 0) {
         indexObject[String(link.rateeId)] = nodes.length
         nodes.push({
           id: String(link.rateeId),
-          name: link.raterName,
+          name: link.rateeName,
           category: String(link.rateeLayerLine[layer].layerId),
           score: link.score,
           linkCount: 1,
@@ -439,17 +415,6 @@ export class FeedbackService {
         nodes[rateeIndex].userScore_otherLayer += link.raterLayer !== link.rateeLayer ? link.score : 0
       }
 
-      // await client.hset(`user${uid}`, link.raterId, JSON.stringify({ id: link.raterId, username: link.raterName, category: link.raterLayerLine[layer].layerId }))
-      // await client.hset(`category${uid}`, link.rateeLayerLine[layer].layerId, link.rateeLayerLine[layer].layerName)
-      // await client.hset(`user${uid}`, link.rateeId, JSON.stringify({ id: link.rateeId, username: link.rateeName, category: link.rateeLayerLine[layer].layerId }))
-      // await client.hincrby(`userScore${uid}`, link.rateeId, link.score)
-      // await client.hincrby(`linkCount${uid}`, link.rateeId, 1)
-      // if (_.findIndex(link.rateeLayerLine, { layerId: link.raterLayerId }) === -1) {
-      //   await client.hincrby(`userScore_otherDep${uid}`, link.rateeId, 1)
-      // }
-      // if (link.raterLayer !== link.rateeLayer) {
-      //   await client.hincrby(`userScore_otherLayer${uid}`, link.rateeId, 1)
-      // }
       if (String(userId) === String(link.raterId) || String(userId) === String(link.rateeId)) {
         myLinks.push({ id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score })
         myLinkNodeUsers.push(String(link.raterId))
@@ -457,33 +422,46 @@ export class FeedbackService {
         myLinkNodeUsers.push(String(link.rateeId))
         myLinkCategorys.push({ id: String(link.rateeLayerLine[layer].layerId), name: link.rateeLayerLine[layer].layerName })
       }
+
+      if (link.raterLayerLine.find(o => String(o.layerId) === layerId) && link.raterLayerLine.find(o => String(o.layerId) === layerId)) {
+        const departmentRaterIndex = departIndexObject[String(link.raterId)]
+        if (!departmentRaterIndex && departmentRaterIndex !== 0) {
+          departIndexObject[String(link.raterId)] = departmentUsers.length
+          departmentUsers.push({
+            id: String(link.raterId),
+            name: link.raterName,
+            score: 0,
+            linkCount: 0,
+            myChoose: 1,
+            bothChoose: link.both ? 1 : 0
+          })
+        } else {
+          departmentUsers[departmentRaterIndex].myChoose += 1
+          departmentUsers[departmentRaterIndex].bothChoose += link.both ? 1 : 0
+        }
+
+        const departmentRateeIndex = departIndexObject[String(link.rateeId)]
+        if (!departmentRateeIndex && departmentRateeIndex !== 0) {
+          departIndexObject[String(link.raterId)] = departmentUsers.length
+          departmentUsers.push({
+            id: String(link.rateeId),
+            name: link.rateeName,
+            score: link.score,
+            linkCount: 1,
+            myChoose: 0,
+            bothChoose: 0,
+          })
+        } else {
+          departmentUsers[departmentRateeIndex].score += link.score
+          departmentUsers[departmentRateeIndex].linkCount += 1
+        }
+
+      }
       return { id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score }
     })
-    // const categoryKeys = await client.hkeys(`category${uid}`)
-    // const categorys = await Promise.all(categoryKeys.map(async key => {
-    //   const name = await client.hget(`category${uid}`, key)
-    //   return {
-    //     id: key,
-    //     name,
-    //   }
-    // }))
-
-    console.log(Date.now() - start, 's1-----——————--------——————————')
     myLinkCategorys = _.uniqBy(myLinkCategorys, 'id')
     myLinkNodeUsers = _.uniq(myLinkNodeUsers)
-    // const users = await client.hkeys(`user${uid}`)
-    console.log(Date.now() - start, 's22-----——————--------——————————')
     const newNodes = await Promise.all(nodes.map(async node => {
-      // const user = JSON.parse(await client.hget(`user${uid}`, node) || '')
-
-      // let score = Number(await client.hget(`userScore${uid}`, node) || '0')
-      // let otherDepScore = Number(await client.hget(`userScore_otherDep${uid}`, node) || '0')
-      // let otherLayerScore = Number(await client.hget(`userScore_otherLayer${uid}`, node) || '0')
-      // let linkCount = Number(await client.hget(`linkCount${uid}`, node) || '0')
-      // const myChoose = _.filter(links, { raterId: node })
-      // const myChooseCount = myChoose.length
-      // const bothChoose = _.filter(links, { raterId: node, both: true })
-      // const bothChooseCount = bothChoose.length
       if (_.indexOf(myLinkNodeUsers, { id: node.id }) > -1) {
         myLinkNodes.push({
           id: node.id,
@@ -506,131 +484,205 @@ export class FeedbackService {
         crosslevelratio: node.score > 0 ? node.userScore_otherLayer / node.score * 100 : 0,
       }
     }))
-    console.log(Date.now() - start, 's333-----——————--------——————————')
     const max = _.maxBy(newNodes, 'value')
-    // await client.del(`user${uid}`)
-    // await client.del(`category${uid}`)
-    // await client.del(`userScore${uid}`)
-    // await client.del(`linkCount${uid}`)
-    // await client.del(`userScore_otherDep${uid}`)
-    // await client.del(`userScore_otherLayer${uid}`)
     const indicator = this.getMyIndicator(newNodes, userId, scale)
-    console.log(Date.now() - start, 's-----——————--------——————————')
-    return { categorys, nodes: newNodes, links: newLink, max, indicator, myLinks, myLinkNodes, myLinkCategorys }
+    const departmentNet = this.getDepartmentNet(departmentUsers, userId, scale)
+    return { categorys, nodes: newNodes, links: newLink, max, indicator, myLinks, myLinkNodes, myLinkCategorys, departmentNet }
 
   }
 
   async userNetByLeader(condition: any, organization: IOrganization) {
-    const uid = uuid()
     const links = await this.userLinkService.findByCondition(condition)
-    const client = this.redis.getClient()
-    const newLink = await Promise.all(links.map(async (link) => {
+    const nodes: any = []
+    const indexObject = {}
+    const categorys: any = []
+    const newLink = links.map((link) => {
       let raterCategory = { id: String(organization._id), name: organization.name };
       let rateeCategory = { id: String(organization._id), name: organization.name };
       if (link.raterLayerLine.length > organization.layer) {
-        raterCategory = { name: link.raterLayerLine[organization.layer].layerName, id: link.raterLayerLine[organization.layer].layerId, }
+        raterCategory = { name: link.raterLayerLine[organization.layer].layerName, id: String(link.raterLayerLine[organization.layer].layerId), }
       }
       if (link.rateeLayerLine.length > organization.layer) {
-        rateeCategory = { name: link.rateeLayerLine[organization.layer].layerName, id: link.rateeLayerLine[organization.layer].layerId, }
+        rateeCategory = { name: link.rateeLayerLine[organization.layer].layerName, id: String(link.rateeLayerLine[organization.layer].layerId), }
       }
-      await client.hset(`category${uid}`, raterCategory.id, raterCategory.name)
-      await client.hset(`user${uid}`, link.raterId, JSON.stringify({ id: link.raterId, username: link.raterName, category: raterCategory.id }))
-      await client.hset(`category${uid}`, rateeCategory.id, rateeCategory.name)
-      await client.hset(`user${uid}`, link.rateeId, JSON.stringify({ id: link.rateeId, username: link.rateeName, category: rateeCategory.id }))
-      await client.hincrby(`userScore${uid}`, link.rateeId, link.score)
+
+      if (_.findIndex(categorys, { id: raterCategory.id }) < 0) {
+        categorys.push(raterCategory)
+      }
+      if (_.findIndex(categorys, { id: rateeCategory.id }) < 0) {
+        categorys.push(rateeCategory)
+      }
+
+      const raterIndex = indexObject[String(link.raterId)]
+      if (!raterIndex && raterIndex !== 0) {
+        indexObject[String(link.raterId)] = nodes.length
+        nodes.push({
+          id: String(link.raterId),
+          name: link.raterName,
+          category: raterCategory.id,
+          value: 0,
+        })
+      }
+
+      const rateeIndex = indexObject[String(link.rateeId)]
+      if (!rateeIndex && rateeIndex !== 0) {
+        indexObject[String(link.rateeId)] = nodes.length
+        nodes.push({
+          id: String(link.rateeId),
+          name: link.rateeName,
+          category: rateeCategory.id,
+          value: link.score,
+        })
+      } else {
+        nodes[rateeIndex].value += link.score
+      }
       return { id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score }
-    }))
+    })
 
-    const categoryKeys = await client.hkeys(`category${uid}`)
-    const categorys = await Promise.all(categoryKeys.map(async key => {
-      const name = await client.hget(`category${uid}`, key)
+    const newNodes = await Promise.all(nodes.map(async node => {
       return {
-        id: key,
-        name,
+        ...node,
+        category: _.findIndex(categorys, { id: node.category }),
       }
     }))
-    const users = await client.hkeys(`user${uid}`)
-    const nodes = await Promise.all(users.map(async node => {
-      const user = JSON.parse(await client.hget(`user${uid}`, node) || '')
-
-      let score = Number(await client.hget(`userScore${uid}`, node) || '0')
-      return {
-        id: user.id,
-        name: user.username,
-        category: _.findIndex(categorys, { id: user.category }),
-        value: score,
-      }
-    }))
-    const max = _.maxBy(nodes, 'value')
-    await client.del(`user${uid}`)
-    await client.del(`category${uid}`)
-    await client.del(`userScore${uid}`)
-    return { userCategorys: categorys, userNodes: nodes, userLinks: newLink, userMax: max }
+    const max = _.maxBy(newNodes, 'value')
+    return { userCategorys: categorys, userNodes: newNodes, userLinks: newLink, userMax: max }
   }
 
   async departmentNetByLeader(condition: any, organization: IOrganization, scale: IScale) {
-    const uid = uuid()
+    const nodes: any = []
+    const departmentKeys: any = []
+    const indexObject = {}
+    const nodeIndex = {}
+    const departmentLinks: any = []
+    const linkIndexObject = {}
     const { layer } = organization
     const { max, min } = this.getScaleMaxAndMinScore(scale)
     const links = await this.userLinkService.findByCondition(condition)
-    const client = this.redis.getClient()
     await Promise.all(links.map(async (link) => {
       if (link.raterLayer >= layer && link.rateeLayer >= layer) {
-        const raterLayerId = link.raterLayerLine[layer - 1].layerId
+        const raterLayerId = String(link.raterLayerLine[layer - 1].layerId)
         const raterLayerName = link.raterLayerLine[layer - 1].layerName
-        const rateeLayerId = link.rateeLayerLine[layer - 1].layerId
+        const rateeLayerId = String(link.rateeLayerLine[layer - 1].layerId)
         const rateeLayerName = link.rateeLayerLine[layer - 1].layerName
         if (raterLayerId === rateeLayerId) {
-          await client.hset(`department${uid}`, raterLayerId, raterLayerName)
-          await client.hincrby(`departmentScore${uid}`, raterLayerId, link.score)
-          await client.hincrby(`user${uid}-${raterLayerId}`, link.rateeId, link.score)
-          if (link.both) {
-            await client.hincrby(`linkCountNoBoth${uid}`, raterLayerId, 1)
+          const departmentIndex = indexObject[raterLayerId]
+          if (!departmentIndex && departmentIndex !== 0) {
+            indexObject[String(raterLayerId)] = departmentKeys.length
+            const userIndex = {}
+            const userScore: any = []
+            userIndex[String(link.rateeId)] = 0
+            userScore.push({ id: String(link.rateeId), scord: link.score })
+            departmentKeys.push({
+              id: raterLayerId,
+              name: raterLayerName,
+              departmentScore: link.score,
+              linkCountNoBoth: link.both ? 0 : 1,
+              linkCountBoth: link.both ? 1 : 0,
+              userIndex,
+              userScore,
+              departmentOtherScore: 0,
+            })
           } else {
-            await client.hincrby(`linkCountBoth${uid}`, raterLayerId, 1)
+            departmentKeys[departmentIndex].departmentScore += link.score
+            departmentKeys[departmentIndex].linkCountNoBoth += link.both ? 0 : 1
+            departmentKeys[departmentIndex].linkCountBoth += link.both ? 1 : 0
+            const indexOfUser = departments[departmentIndex].userIndex[String(link.rateeId)]
+            if (!indexOfUser && indexOfUser !== 0) {
+              departmentKeys[departmentIndex].userScore.push({ id: String(link.rateeId), scord: link.score })
+            } else {
+              departmentKeys[departmentIndex].userScore[indexOfUser].score += link.score
+            }
+          }
+        } else {
+
+          const departmentIndex = indexObject[rateeLayerId]
+          if (!departmentIndex && departmentIndex !== 0) {
+            indexObject[String(rateeLayerId)] = departmentKeys.length
+            departmentKeys.push({
+              id: rateeLayerId,
+              name: rateeLayerName,
+              departmentScore: 0,
+              linkCountNoBoth: 0,
+              linkCountBoth: 0,
+              userIndex: {},
+              userScore: [],
+              departmentOtherScore: link.score
+            })
+          } else {
+            departmentKeys[departmentIndex].departmentOtherScore += link.score
           }
 
-        } else {
-          await client.hset(`node${uid}`, rateeLayerId, raterLayerName)
-          await client.hincrby(`departmentOtherScore${uid}`, rateeLayerId, link.score)
-          await client.hset(`node${uid}`, raterLayerId, rateeLayerName)
-          await client.hincrby(`link${uid}-${raterLayerId}`, rateeLayerId, link.score)
-        }
+          const raterIndex = nodeIndex[raterLayerId]
+          if (!raterIndex && raterIndex !== 0) {
+            nodeIndex[raterLayerId] = nodes.length
+            nodes.push({
+              id: raterLayerId,
+              name: raterLayerName,
+              value: 0
+            })
+          }
 
+          const rateeIndex = nodeIndex[rateeLayerId]
+          if (!rateeIndex && rateeIndex !== 0) {
+            nodeIndex[rateeLayerId] = nodes.length
+            nodes.push({
+              id: rateeLayerId,
+              name: rateeLayerName,
+              value: 0
+            })
+          } else {
+            nodes[rateeIndex].score += link.score
+          }
+
+          const indexOfLink = linkIndexObject[`${raterLayerId}-${rateeLayerId}`]
+          if (!indexOfLink && indexOfLink !== 0) {
+            linkIndexObject[`${raterLayerId}-${rateeLayerId}`] = departmentLinks.length
+            departmentLinks.push({
+              source: raterLayerId,
+              target: rateeLayerId,
+              weight: link.score
+            })
+          } else {
+            departmentLinks[indexOfLink].weight += link.score
+          }
+        }
       } else if (link.rateeLayer >= layer) {
+
+
         const rateeLayerId = link.rateeLayerLine[layer - 1].layerId
         const rateeLayerName = link.rateeLayerLine[layer - 1].layerName
-        await client.hset(`department${uid}`, rateeLayerId, rateeLayerName)
-        await client.hincrby(`departmentOtherLayerScore${uid}`, rateeLayerId, link.score)
+        const departmentIndex = indexObject[rateeLayerId]
+        if (!departmentIndex && departmentIndex !== 0) {
+          indexObject[String(rateeLayerId)] = departmentKeys.length
+          departmentKeys.push({
+            id: rateeLayerId,
+            name: rateeLayerName,
+            departmentScore: 0,
+            linkCountNoBoth: 0,
+            linkCountBoth: 0,
+            userIndex: {},
+            userScore: [],
+            departmentOtherScore: link.score
+          })
+        } else {
+          departmentKeys[departmentIndex].departmentOtherScore += link.score
+        }
       }
     }))
-    const departmentKeys = await client.hkeys(`department${uid}`)
-    const departments: any = await Promise.all(departmentKeys.map(async key => {
-      const name = await client.hget(`department${uid}`, key)
-      const value = Number(await client.hget(`departmentOtherScore${uid}`, key) || 0)
-      const linkCountNoBoth = Number(await client.hget(`linkCountNoBoth${uid}`, key) || '0')
-      const linkCountBoth = Number(await client.hget(`linkCountBoth${uid}`, key) || '0')
-      const otherLayerScore = Number(await client.hget(`departmentOtherLayerScore${uid}`, key) || '0')
-      const sameDepScore = Number(await client.hget(`departmentScore${uid}`, key) || '0')
+    const departments: any = departmentKeys.map(async department => {
       let deptcrossdept_deptlevel = 0
       let density_deptlevel = 0
-      const userCount = await this.userService.countByCondition({ 'layerLine.layerId': key, isDelete: false })
-      if (value || otherLayerScore || sameDepScore) {
-        deptcrossdept_deptlevel = (otherLayerScore + value) / (sameDepScore + value + otherLayerScore)
+      const userCount = await this.userService.countByCondition({ 'layerLine.layerId': department.id, isDelete: false })
+      if (department.departmentOtherScore || department.departmentScore) {
+        deptcrossdept_deptlevel = department.departmentScore / (department.departmentScore + department.departmentOtherScore)
       }
-      if (sameDepScore) {
+      if (department.departmentScore) {
         const Max = max * userCount * (userCount - 1)
-        density_deptlevel = sameDepScore / Max
+        density_deptlevel = department.departmentScore / Max
       }
-      const userKeys = await client.hkeys(`user${uid}-${key}`)
-      const userScores: { id: string, score: number }[] = await Promise.all(userKeys.map(async user => {
-        const scoreOfUser = Number(await client.hget(`user${uid}-${key}`, user))
 
-        return {
-          id: user,
-          score: scoreOfUser
-        }
-      }))
+      const userScores = department.userScore
       const maxUserScore = _.maxBy(userScores, 'score')
       let centralization = 0
       userScores.map(userScore => {
@@ -641,53 +693,16 @@ export class FeedbackService {
       }
       const centralization_dep = (userCount - 1) * (userCount - 1) * (max - min)
 
-      const node = {
-        id: key,
-        name,
-        value,
-        reciprocity_deptlevel: (linkCountNoBoth > 0 || linkCountBoth) > 0 ? linkCountBoth / 2 / (linkCountNoBoth + linkCountBoth / 2) : 0,
+      return {
+        id: department.id,
+        name: department.name,
+        reciprocity_deptlevel: (department.linkCountNoBoth > 0 || department.linkCountBoth) > 0 ? department.linkCountBoth / 2 / (department.linkCountNoBoth + department.linkCountBoth / 2) : 0,
         deptcrossdept_deptlevel,
         density_deptlevel,
         centralization_deptlevel: centralization / centralization_dep * 100
       }
-      await client.del(`user${uid}-${key}`)
-      return node
-    }))
+    })
 
-    const nodeKeys = await client.hkeys(`node${uid}`)
-    const nodes: any[] = await Promise.all(nodeKeys.map(async nodeKey => {
-      const nodeName = await client.hget(`node${uid}`, nodeKey)
-      const nodeValue = Number(await client.hget(`departmentOtherScore${uid}`, nodeKey) || 0)
-      return {
-        id: nodeKey,
-        value: nodeValue,
-        name: nodeName,
-      }
-    }))
-
-    const departmentLinks: any[] = []
-    await Promise.all(nodes.map(async source => {
-      const linkKeys = await client.hkeys(`link${uid}-${source.id}`)
-      await Promise.all(linkKeys.map(async target => {
-        const weight = Number(await client.hget(`link${uid}-${source.id}`, target) || 0)
-        if (weight) {
-          departmentLinks.push({
-            source: String(source.id),
-            target,
-            weight,
-          })
-        }
-      }))
-      await client.del(`link${uid}-${source.id}`)
-    }))
-
-    await client.del(`department${uid}`)
-    await client.del(`departmentScore${uid}`)
-    await client.del(`linkCountNoBoth${uid}`)
-    await client.del(`linkCountBoth${uid}`)
-    await client.del(`node${uid}`)
-    await client.del(`departmentOtherScore${uid}`)
-    await client.del(`departmentOtherLayerScore${uid}`)
     const myDepartment = _.find(departments, { id: String(organization._id) })
 
     const density_deptlevel_sort = _.orderBy(departments, 'density_deptlevel', 'desc')
@@ -750,19 +765,11 @@ export class FeedbackService {
     if (scale.scaleType === 'filterScale' || scale.scaleType === 'socialScale') {
       if (!leader) {
         const companyCondition = { scale: scaleId, companyProject: project, questionnaire }
-        const companyNet = await this.getCompanyNet(companyCondition, 0, setting.staffFeedback.sameDepNameVisiable, user._id, scale)
-        const departmentCondition = {
-          scale: scaleId,
-          companyProject: project,
-          questionnaire,
-          'raterLayerLine.layerId': user.layerId,
-          'rateeLayerLine.layerId': user.layerId,
-        }
-        const departmentNet = await this.getDepartmentNet(departmentCondition, 0, setting.staffFeedback.sameDepNameVisiable, user._id, scale)
+        const companyNet = await this.getCompanyNet(companyCondition, 0, setting.staffFeedback.sameDepNameVisiable, user._id, scale, String(user.layerId))
         return {
           companyNet,
           scale,
-          departmentNet,
+          departmentNet: companyNet.departmentNet,
           // myNet,
           // myDepartmentNet
         }
