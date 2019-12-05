@@ -244,11 +244,8 @@ export class FeedbackService {
 
   getEvaluation(oriScore, evaluates, type: number) {
     const score = (1 - oriScore) * 100
-    console.log(score, 'score')
     let evaluation: any
-    console.log(evaluates, 'ss')
     const evaluate = _.find(evaluates, { type })
-    console.log(evaluate, 'ssss')
     if (!evaluate) {
       return null
     }
@@ -384,6 +381,7 @@ export class FeedbackService {
   async getCompanyNet(condition: any, layer: number, nameVisible: boolean, userId: string, scale: IScale) {
     // const uid = uuid()
     console.log('!!!!!!!!!!!!!!!!!!!!!!!!')
+    const indexObject = {}
     const links = await this.userLinkService.findByCondition(condition)
     let myLinkNodeUsers: any[] = []
     const myLinks: any[] = []
@@ -401,9 +399,8 @@ export class FeedbackService {
           name: link.raterLayerLine[layer].layerName
         })
       }
-      const raterExist = nodes.find(o => o.id === String(link.raterId))
-      console.log(raterExist, 'raterExist')
-      if (!raterExist) {
+      const raterIndex = indexObject[String(link.raterId)]
+      if (!raterIndex && raterIndex !== 0) {
         nodes.push({
           id: String(link.raterId),
           name: link.raterName,
@@ -416,17 +413,16 @@ export class FeedbackService {
           bothChoose: link.both ? 1 : 0
         })
       } else {
-        raterExist.myChoose += 1
-        raterExist.bothChoose += link.both ? 1 : 0
+        nodes[raterIndex].myChoose += 1
+        nodes[raterIndex].bothChoose += link.both ? 1 : 0
       }
 
-      const rateeExist = nodes.find(o => o.id === String(link.rateeId))
-      console.log(rateeExist, 'raterExist')
-      if (!rateeExist) {
+      const rateeIndex = indexObject[String(link.raterId)]
+      if (!rateeIndex && rateeIndex !== 0) {
         nodes.push({
-          id: String(link.raterId),
+          id: String(link.rateeId),
           name: link.raterName,
-          category: String(link.raterLayerLine[layer].layerId),
+          category: String(link.rateeLayerLine[layer].layerId),
           score: link.score,
           linkCount: 1,
           myChoose: 0,
@@ -435,10 +431,10 @@ export class FeedbackService {
           userScore_otherLayer: link.raterLayer !== link.rateeLayer ? link.score : 0
         })
       } else {
-        rateeExist.score += link.score
-        rateeExist.linkCount += 1
-        rateeExist.userScore_otherDep += _.findIndex(link.rateeLayerLine, { layerId: link.raterLayerId }) < 0 ? link.score : 0
-        rateeExist.userScore_otherLayer += link.raterLayer !== link.rateeLayer ? link.score : 0
+        nodes[rateeIndex].score += link.score
+        nodes[rateeIndex].linkCount += 1
+        nodes[rateeIndex].userScore_otherDep += _.findIndex(link.rateeLayerLine, { layerId: link.raterLayerId }) < 0 ? link.score : 0
+        nodes[rateeIndex].userScore_otherLayer += link.raterLayer !== link.rateeLayer ? link.score : 0
       }
 
       // await client.hset(`user${uid}`, link.raterId, JSON.stringify({ id: link.raterId, username: link.raterName, category: link.raterLayerLine[layer].layerId }))
@@ -509,7 +505,7 @@ export class FeedbackService {
       }
     }))
     console.log(Date.now() - start, 's333-----——————--------——————————')
-    const max = _.maxBy(nodes, 'value')
+    const max = _.maxBy(newNodes, 'value')
     // await client.del(`user${uid}`)
     // await client.del(`category${uid}`)
     // await client.del(`userScore${uid}`)
