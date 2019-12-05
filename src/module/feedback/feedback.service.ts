@@ -516,7 +516,7 @@ export class FeedbackService {
     // await client.del(`userScore_otherLayer${uid}`)
     const indicator = this.getMyIndicator(newNodes, userId, scale)
     console.log(Date.now() - start, 's-----——————--------——————————')
-    return { categorys, nodes: newNodes, links: newLink, max, indicator, myLinks }
+    return { categorys, nodes: newNodes, links: newLink, max, indicator, myLinks, myLinkNodes, myLinkCategorys }
 
   }
 
@@ -759,8 +759,6 @@ export class FeedbackService {
           'rateeLayerLine.layerId': user.layerId,
         }
         const departmentNet = await this.getDepartmentNet(departmentCondition, 0, setting.staffFeedback.sameDepNameVisiable, user._id, scale)
-        // const myNet = this.getNet({ raterId: user._id, scale: scaleId, companyProject: project, questionnaire }, 0)
-        // const myDepartmentNet = this.getNet({ layerId: user.layerId, scale: scaleId, companyProject: project, questionnaire }, 0)
         return {
           companyNet,
           scale,
