@@ -572,7 +572,7 @@ export class FeedbackService {
             const userIndex = {}
             const userScore: any = []
             userIndex[String(link.rateeId)] = 0
-            userScore.push({ id: String(link.rateeId), scord: link.score })
+            userScore.push({ id: String(link.rateeId), score: link.score })
             departmentKeys.push({
               id: raterLayerId,
               name: raterLayerName,
@@ -587,9 +587,9 @@ export class FeedbackService {
             departmentKeys[departmentIndex].departmentScore += link.score
             departmentKeys[departmentIndex].linkCountNoBoth += link.both ? 0 : 1
             departmentKeys[departmentIndex].linkCountBoth += link.both ? 1 : 0
-            const indexOfUser = departments[departmentIndex].userIndex[String(link.rateeId)]
+            const indexOfUser = departmentKeys[departmentIndex].userIndex[String(link.rateeId)]
             if (!indexOfUser && indexOfUser !== 0) {
-              departmentKeys[departmentIndex].userScore.push({ id: String(link.rateeId), scord: link.score })
+              departmentKeys[departmentIndex].userScore.push({ id: String(link.rateeId), score: link.score })
             } else {
               departmentKeys[departmentIndex].userScore[indexOfUser].score += link.score
             }
@@ -670,6 +670,7 @@ export class FeedbackService {
         }
       }
     }))
+    console.log(departmentKeys, 'aa')
     const departments: any = departmentKeys.map(async department => {
       let deptcrossdept_deptlevel = 0
       let density_deptlevel = 0
@@ -683,6 +684,7 @@ export class FeedbackService {
       }
 
       const userScores = department.userScore
+      console.log(userScores, 'sss')
       const maxUserScore = _.maxBy(userScores, 'score')
       let centralization = 0
       userScores.map(userScore => {
