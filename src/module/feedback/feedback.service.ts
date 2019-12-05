@@ -462,7 +462,7 @@ export class FeedbackService {
     myLinkCategorys = _.uniqBy(myLinkCategorys, 'id')
     myLinkNodeUsers = _.uniq(myLinkNodeUsers)
     const newNodes = await Promise.all(nodes.map(async node => {
-      if (_.indexOf(myLinkNodeUsers, { id: node.id }) > -1) {
+      if (_.indexOf(myLinkNodeUsers, node.id) > -1) {
         myLinkNodes.push({
           id: node.id,
           name: nameVisible || node.id === String(userId) ? node.username : '',
