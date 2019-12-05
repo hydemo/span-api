@@ -382,87 +382,133 @@ export class FeedbackService {
   }
 
   async getCompanyNet(condition: any, layer: number, nameVisible: boolean, userId: string, scale: IScale) {
-    const uid = uuid()
+    // const uid = uuid()
     const links = await this.userLinkService.findByCondition(condition)
     let myLinkNodeUsers: any[] = []
     const myLinks: any[] = []
     const myLinkNodes: any[] = []
     let myLinkCategorys: any[] = []
-    const client = this.redis.getClient()
+    const nodes: any[] = []
+    const categorys: any[] = []
+    // const client = this.redis.getClient()
     const newLink = await Promise.all(links.map(async (link) => {
-      if (String(userId) === link.raterId || String(userId) === link.rateeId) {
-        myLinks.push(link)
-        myLinkNodeUsers.push(link.raterId)
-        myLinkCategorys.push({ id: link.raterLayerLine[layer].layerId, name: link.raterLayerLine[layer].layerName })
-        myLinkNodeUsers.push(link.rateeId)
-        myLinkCategorys.push({ id: link.rateeLayerLine[layer].layerId, name: link.rateeLayerLine[layer].layerName })
+      if (_.findIndex(categorys, { id: String(link.raterLayerLine[layer].layerId) }) < 0) {
+        categorys.push({
+          id: String(link.raterLayerLine[layer].layerId),
+          name: link.raterLayerLine[layer].layerName
+        })
       }
-      await client.hset(`category${uid}`, link.raterLayerLine[layer].layerId, link.raterLayerLine[layer].layerName)
-      await client.hset(`user${uid}`, link.raterId, JSON.stringify({ id: link.raterId, username: link.raterName, category: link.raterLayerLine[layer].layerId }))
-      await client.hset(`category${uid}`, link.rateeLayerLine[layer].layerId, link.rateeLayerLine[layer].layerName)
-      await client.hset(`user${uid}`, link.rateeId, JSON.stringify({ id: link.rateeId, username: link.rateeName, category: link.rateeLayerLine[layer].layerId }))
-      await client.hincrby(`userScore${uid}`, link.rateeId, link.score)
-      await client.hincrby(`linkCount${uid}`, link.rateeId, 1)
-      if (_.findIndex(link.rateeLayerLine, { layerId: link.raterLayerId }) === -1) {
-        await client.hincrby(`userScore_otherDep${uid}`, link.rateeId, 1)
+      const raterExist = nodes.find(o => o.id === String(link.raterId))
+      if (!raterExist) {
+        nodes.push({
+          id: String(link.raterId),
+          name: link.raterName,
+          category: String(link.raterLayerLine[layer].layerId),
+          score: 0,
+          linkCount: 0,
+          userScore_otherDep: 0,
+          userScore_otherLayer: 0,
+          myChoose: 1,
+          bothChoose: link.both ? 1 : 0
+        })
+      } else {
+        raterExist.myChoose += 1
+        raterExist.bothChoose += link.both ? 1 : 0
       }
-      if (link.raterLayer !== link.rateeLayer) {
-        await client.hincrby(`userScore_otherLayer${uid}`, link.rateeId, 1)
+
+      const rateeExist = nodes.find(o => o.id === String(link.rateeId))
+      if (!rateeExist) {
+        nodes.push({
+          id: String(link.raterId),
+          name: link.raterName,
+          category: String(link.raterLayerLine[layer].layerId),
+          score: link.score,
+          linkCount: 1,
+          myChoose: 0,
+          bothChoose: 0,
+          userScore_otherDep: _.findIndex(link.rateeLayerLine, { layerId: link.raterLayerId }) < 0 ? link.score : 0,
+          userScore_otherLayer: link.raterLayer !== link.rateeLayer ? link.score : 0
+        })
+      } else {
+        rateeExist.score += link.score
+        rateeExist.linkCount += 1
+        rateeExist.userScore_otherDep += _.findIndex(link.rateeLayerLine, { layerId: link.raterLayerId }) < 0 ? link.score : 0
+        rateeExist.userScore_otherLayer += link.raterLayer !== link.rateeLayer ? link.score : 0
+      }
+
+      // await client.hset(`user${uid}`, link.raterId, JSON.stringify({ id: link.raterId, username: link.raterName, category: link.raterLayerLine[layer].layerId }))
+      // await client.hset(`category${uid}`, link.rateeLayerLine[layer].layerId, link.rateeLayerLine[layer].layerName)
+      // await client.hset(`user${uid}`, link.rateeId, JSON.stringify({ id: link.rateeId, username: link.rateeName, category: link.rateeLayerLine[layer].layerId }))
+      // await client.hincrby(`userScore${uid}`, link.rateeId, link.score)
+      // await client.hincrby(`linkCount${uid}`, link.rateeId, 1)
+      // if (_.findIndex(link.rateeLayerLine, { layerId: link.raterLayerId }) === -1) {
+      //   await client.hincrby(`userScore_otherDep${uid}`, link.rateeId, 1)
+      // }
+      // if (link.raterLayer !== link.rateeLayer) {
+      //   await client.hincrby(`userScore_otherLayer${uid}`, link.rateeId, 1)
+      // }
+      if (String(userId) === String(link.raterId) || String(userId) === String(link.rateeId)) {
+        myLinks.push({ id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score })
+        myLinkNodeUsers.push(String(link.raterId))
+        myLinkCategorys.push({ id: String(link.raterLayerLine[layer].layerId), name: link.raterLayerLine[layer].layerName })
+        myLinkNodeUsers.push(String(link.rateeId))
+        myLinkCategorys.push({ id: String(link.rateeLayerLine[layer].layerId), name: link.rateeLayerLine[layer].layerName })
       }
       return { id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score }
     }))
-    const categoryKeys = await client.hkeys(`category${uid}`)
-    const categorys = await Promise.all(categoryKeys.map(async key => {
-      const name = await client.hget(`category${uid}`, key)
-      return {
-        id: key,
-        name,
-      }
-    }))
+    // const categoryKeys = await client.hkeys(`category${uid}`)
+    // const categorys = await Promise.all(categoryKeys.map(async key => {
+    //   const name = await client.hget(`category${uid}`, key)
+    //   return {
+    //     id: key,
+    //     name,
+    //   }
+    // }))
     myLinkCategorys = _.uniqBy(myLinkCategorys, 'id')
     myLinkNodeUsers = _.uniq(myLinkNodeUsers)
-    const users = await client.hkeys(`user${uid}`)
-    const nodes = await Promise.all(users.map(async node => {
-      const user = JSON.parse(await client.hget(`user${uid}`, node) || '')
+    // const users = await client.hkeys(`user${uid}`)
+    const newNodes = await Promise.all(nodes.map(async node => {
+      // const user = JSON.parse(await client.hget(`user${uid}`, node) || '')
 
-      let score = Number(await client.hget(`userScore${uid}`, node) || '0')
-      let otherDepScore = Number(await client.hget(`userScore_otherDep${uid}`, node) || '0')
-      let otherLayerScore = Number(await client.hget(`userScore_otherLayer${uid}`, node) || '0')
-      let linkCount = Number(await client.hget(`linkCount${uid}`, node) || '0')
-      const myChoose = _.filter(links, { raterId: node })
-      const myChooseCount = myChoose.length
-      const bothChoose = _.filter(links, { raterId: node, both: true })
-      const bothChooseCount = bothChoose.length
-      if (_.indexOf(myLinkNodeUsers, node) > -1) {
+      // let score = Number(await client.hget(`userScore${uid}`, node) || '0')
+      // let otherDepScore = Number(await client.hget(`userScore_otherDep${uid}`, node) || '0')
+      // let otherLayerScore = Number(await client.hget(`userScore_otherLayer${uid}`, node) || '0')
+      // let linkCount = Number(await client.hget(`linkCount${uid}`, node) || '0')
+      // const myChoose = _.filter(links, { raterId: node })
+      // const myChooseCount = myChoose.length
+      // const bothChoose = _.filter(links, { raterId: node, both: true })
+      // const bothChooseCount = bothChoose.length
+      if (_.indexOf(myLinkNodeUsers, { id: node.id }) > -1) {
         myLinkNodes.push({
-          id: user.id,
-          name: nameVisible || user.id === String(userId) ? user.username : '',
-          linkCount,
-          category: _.findIndex(myLinkCategorys, { id: user.category }),
-          value: score,
+          id: node.id,
+          name: nameVisible || node.id === String(userId) ? node.username : '',
+          linkCount: node.linkCount,
+          category: _.findIndex(myLinkCategorys, { id: node.category }),
+          value: node.score,
         })
       }
       return {
-        id: user.id,
-        name: nameVisible || user.id === String(userId) ? user.username : '',
-        linkCount,
-        category: _.findIndex(categorys, { id: user.category }),
-        value: score,
-        crossindegree_full: otherDepScore,
-        crossdeptratio: score > 0 ? otherDepScore / score * 100 : 0,
-        reciprocity_full: myChooseCount > 0 ? bothChooseCount / myChooseCount * 100 : 0,
-        crosslevelratio: score > 0 ? otherLayerScore / score * 100 : 0,
+
+        id: node.id,
+        name: nameVisible || node.id === String(userId) ? node.username : '',
+        linkCount: node.linkCount,
+        category: _.findIndex(categorys, { id: node.category }),
+        value: node.score,
+        crossindegree_full: node.userScore_otherDep,
+        crossdeptratio: node.score > 0 ? node.userScore_otherDep / node.score * 100 : 0,
+        reciprocity_full: node.myChoose > 0 ? node.bothChoose / node.myChoose * 100 : 0,
+        crosslevelratio: node.score > 0 ? node.userScore_otherLayer / node.score * 100 : 0,
       }
     }))
     const max = _.maxBy(nodes, 'value')
-    await client.del(`user${uid}`)
-    await client.del(`category${uid}`)
-    await client.del(`userScore${uid}`)
-    await client.del(`linkCount${uid}`)
-    await client.del(`userScore_otherDep${uid}`)
-    await client.del(`userScore_otherLayer${uid}`)
+    // await client.del(`user${uid}`)
+    // await client.del(`category${uid}`)
+    // await client.del(`userScore${uid}`)
+    // await client.del(`linkCount${uid}`)
+    // await client.del(`userScore_otherDep${uid}`)
+    // await client.del(`userScore_otherLayer${uid}`)
     const indicator = this.getMyIndicator(nodes, userId, scale)
-    return { categorys, nodes, links: newLink, max, indicator, myLinks: myLinks.map(v => ({ id: String(v._id), source: String(v.raterId), target: String(v.rateeId), weight: v.score })), myLinkNodes, myLinkCategorys }
+    return { categorys, nodes: newNodes, links: newLink, max, indicator, myLinks }
 
   }
 
