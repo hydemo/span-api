@@ -383,6 +383,7 @@ export class FeedbackService {
 
   async getCompanyNet(condition: any, layer: number, nameVisible: boolean, userId: string, scale: IScale) {
     // const uid = uuid()
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!')
     const links = await this.userLinkService.findByCondition(condition)
     let myLinkNodeUsers: any[] = []
     const myLinks: any[] = []
@@ -390,6 +391,8 @@ export class FeedbackService {
     let myLinkCategorys: any[] = []
     const nodes: any[] = []
     const categorys: any[] = []
+    const start = Date.now()
+    console.log('start:', start)
     // const client = this.redis.getClient()
     const newLink = await Promise.all(links.map(async (link) => {
       if (_.findIndex(categorys, { id: String(link.raterLayerLine[layer].layerId) }) < 0) {
@@ -508,6 +511,7 @@ export class FeedbackService {
     // await client.del(`userScore_otherDep${uid}`)
     // await client.del(`userScore_otherLayer${uid}`)
     const indicator = this.getMyIndicator(nodes, userId, scale)
+    console.log(Date.now() - start, 's-----——————--------——————————')
     return { categorys, nodes: newNodes, links: newLink, max, indicator, myLinks }
 
   }
