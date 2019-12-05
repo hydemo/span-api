@@ -401,6 +401,7 @@ export class FeedbackService {
       }
       const raterIndex = indexObject[String(link.raterId)]
       if (!raterIndex && raterIndex !== 0) {
+        indexObject[String(link.raterId)] = nodes.length
         nodes.push({
           id: String(link.raterId),
           name: link.raterName,
@@ -419,6 +420,7 @@ export class FeedbackService {
 
       const rateeIndex = indexObject[String(link.raterId)]
       if (!rateeIndex && rateeIndex !== 0) {
+        indexObject[String(link.rateeId)] = nodes.length
         nodes.push({
           id: String(link.rateeId),
           name: link.raterName,
