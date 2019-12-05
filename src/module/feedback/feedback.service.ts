@@ -394,7 +394,7 @@ export class FeedbackService {
     const start = Date.now()
     console.log('start:', start)
     // const client = this.redis.getClient()
-    const newLink = await Promise.all(links.map(async (link) => {
+    const newLink = links.map((link) => {
       if (_.findIndex(categorys, { id: String(link.raterLayerLine[layer].layerId) }) < 0) {
         categorys.push({
           id: String(link.raterLayerLine[layer].layerId),
@@ -458,7 +458,7 @@ export class FeedbackService {
         myLinkCategorys.push({ id: String(link.rateeLayerLine[layer].layerId), name: link.rateeLayerLine[layer].layerName })
       }
       return { id: String(link._id), source: String(link.raterId), target: String(link.rateeId), weight: link.score }
-    }))
+    })
     // const categoryKeys = await client.hkeys(`category${uid}`)
     // const categorys = await Promise.all(categoryKeys.map(async key => {
     //   const name = await client.hget(`category${uid}`, key)
