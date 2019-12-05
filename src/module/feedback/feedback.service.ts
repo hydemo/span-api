@@ -632,7 +632,7 @@ export class FeedbackService {
               value: 0
             })
           } else {
-            nodes[rateeIndex].score += link.score
+            nodes[rateeIndex].value += link.score
           }
 
           const indexOfLink = linkIndexObject[`${raterLayerId}-${rateeLayerId}`]
@@ -683,17 +683,21 @@ export class FeedbackService {
         density_deptlevel = department.departmentScore / Max
       }
 
+      let centralization_deptlevel = 0
       const userScores = department.userScore
-      console.log(userScores, 'sss')
-      const maxUserScore = _.maxBy(userScores, 'score')
-      let centralization = 0
-      userScores.map(userScore => {
-        centralization += (maxUserScore.score - userScore.score)
-      })
-      if (userScores.length < userCount) {
-        centralization += maxUserScore.score * (userCount - userScores.length)
+      if (userScores.length) {
+        const maxUserScore = _.maxBy(userScores, 'score')
+        let centralization = 0
+        console.log(maxUserScore, 'sss')
+        userScores.map(userScore => {
+          centralization += (maxUserScore.score - userScore.score)
+        })
+        if (userScores.length < userCount) {
+          centralization += maxUserScore.score * (userCount - userScores.length)
+        }
+        const centralization_dep = (userCount - 1) * (userCount - 1) * (max - min)
+        centralization_deptlevel = centralization / centralization_dep * 100
       }
-      const centralization_dep = (userCount - 1) * (userCount - 1) * (max - min)
 
       return {
         id: department.id,
@@ -701,7 +705,7 @@ export class FeedbackService {
         reciprocity_deptlevel: (department.linkCountNoBoth > 0 || department.linkCountBoth) > 0 ? department.linkCountBoth / 2 / (department.linkCountNoBoth + department.linkCountBoth / 2) : 0,
         deptcrossdept_deptlevel,
         density_deptlevel,
-        centralization_deptlevel: centralization / centralization_dep * 100
+        centralization_deptlevel,
       }
     })
 
@@ -780,7 +784,7 @@ export class FeedbackService {
         if (!organization) {
           throw new ApiException('No Permission3', ApiErrorCode.NO_PERMISSION, 403)
         }
-        const myDepartment = await this.organizationService.findById(user.layerId)
+        const myDepartment = await this.organizationService.findById(departmentId)
         if (!myDepartment) {
           throw new ApiException('No Permission4', ApiErrorCode.NO_PERMISSION, 403)
         }
