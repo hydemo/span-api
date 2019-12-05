@@ -467,9 +467,12 @@ export class FeedbackService {
     //     name,
     //   }
     // }))
+
+    console.log(Date.now() - start, 's1-----——————--------——————————')
     myLinkCategorys = _.uniqBy(myLinkCategorys, 'id')
     myLinkNodeUsers = _.uniq(myLinkNodeUsers)
     // const users = await client.hkeys(`user${uid}`)
+    console.log(Date.now() - start, 's22-----——————--------——————————')
     const newNodes = await Promise.all(nodes.map(async node => {
       // const user = JSON.parse(await client.hget(`user${uid}`, node) || '')
 
@@ -503,6 +506,7 @@ export class FeedbackService {
         crosslevelratio: node.score > 0 ? node.userScore_otherLayer / node.score * 100 : 0,
       }
     }))
+    console.log(Date.now() - start, 's333-----——————--------——————————')
     const max = _.maxBy(nodes, 'value')
     // await client.del(`user${uid}`)
     // await client.del(`category${uid}`)
@@ -510,7 +514,7 @@ export class FeedbackService {
     // await client.del(`linkCount${uid}`)
     // await client.del(`userScore_otherDep${uid}`)
     // await client.del(`userScore_otherLayer${uid}`)
-    const indicator = this.getMyIndicator(nodes, userId, scale)
+    const indicator = this.getMyIndicator(newNodes, userId, scale)
     console.log(Date.now() - start, 's-----——————--------——————————')
     return { categorys, nodes: newNodes, links: newLink, max, indicator, myLinks }
 
