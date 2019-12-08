@@ -91,7 +91,7 @@ export class UserService {
 
   // 根据id查找
   async updateById(id: string, update: any): Promise<IUser> {
-    return await this.userModel.findByIdAndUpdate(id, update).lean().exec()
+    return await this.userModel.findByIdAndUpdate(id, update, { new: true }).lean().exec()
   }
 
 
