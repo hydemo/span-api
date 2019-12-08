@@ -222,7 +222,7 @@ export class UserService {
     if (reset.password !== reset.confirm) {
       return { status: 400, code: 4022 }
     }
-    const password = await this.cryptoUtil.encryptPassword(md5(reset.password))
+    const password = await this.cryptoUtil.encryptPassword(reset.password)
     const msg = await this.jwtService.verify(reset.token);
     if (msg.type === 'user' && msg.id === String(user._id)) {
       await this.userModel.findByIdAndUpdate(user._id, { password });
@@ -240,7 +240,7 @@ export class UserService {
     if (!result) {
       throw new ApiException('密码有误', ApiErrorCode.NO_PERMISSION, 403)
     }
-    const password = await this.cryptoUtil.encryptPassword(md5(reset.newPassword))
+    const password = await this.cryptoUtil.encryptPassword(reset.newPassword)
     await this.userModel.findByIdAndUpdate(user._id, { password });
     return { status: 200, msg: 'success' }
   }
