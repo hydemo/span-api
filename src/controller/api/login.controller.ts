@@ -30,7 +30,7 @@ export class ApiUserController {
   }
 
   @Put('/update')
-  @ApiOperation({ title: '注册企业', description: '注册企业' })
+  @ApiOperation({ title: '修改信息', description: '修改信息' })
   async update(
     @Body() update: UpdateDTO,
     @Request() req: any
@@ -39,7 +39,7 @@ export class ApiUserController {
   }
 
   @Put('/password')
-  @ApiOperation({ title: '注册企业', description: '注册企业' })
+  @ApiOperation({ title: '修改密码', description: '修改密码' })
   async resetMyPassword(
     @Body() reset: ResetMyPassDTO,
     @Request() req: any
