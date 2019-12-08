@@ -30,6 +30,7 @@ export class ApiUserController {
   }
 
   @Put('/update')
+  @UseGuards(AuthGuard())
   @ApiOperation({ title: '修改信息', description: '修改信息' })
   async update(
     @Body() update: UpdateDTO,
@@ -39,6 +40,7 @@ export class ApiUserController {
   }
 
   @Put('/password')
+  @UseGuards(AuthGuard())
   @ApiOperation({ title: '修改密码', description: '修改密码' })
   async resetMyPassword(
     @Body() reset: ResetMyPassDTO,
