@@ -236,7 +236,10 @@ export class UserService {
 
   // 重置密码
   async resetMyPassword(user: IUser, reset: ResetMyPassDTO) {
-    await this.cryptoUtil.checkPassword(reset.password, user.password)
+    const result = this.cryptoUtil.checkPassword(reset.password, user.password)
+    if (!result) {
+      throw new ApiException('密码有误', ApiErrorCode.NO_PERMISSION, 403)
+    }
     const password = await this.cryptoUtil.encryptPassword(md5(reset.newPassword))
     await this.userModel.findByIdAndUpdate(user._id, { password });
     return { status: 200, msg: 'success' }
