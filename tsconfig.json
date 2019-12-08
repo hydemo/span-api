@@ -5,6 +5,11 @@
     "noImplicitAny": false,
     "removeComments": true,
     "noLib": false,
+    "lib": [
+      "es6",
+      "dom",
+      "es2017"
+    ],
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
