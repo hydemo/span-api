@@ -21,7 +21,6 @@ export class CryptoUtil {
      */
     checkPassword(password: string, encryptedPassword): boolean {
         const currentPass = this.encryptPassword(password);
-        console.log(password, currentPass, encryptedPassword)
         if (currentPass === encryptedPassword) {
             return true;
         }

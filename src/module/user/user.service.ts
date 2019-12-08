@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import { RedisService } from 'nestjs-redis'
 import { Inject, Injectable } from '@nestjs/common'
 import { IUser } from './user.interfaces'
-import { ResetPassDTO, CreateEmployeeDTO } from './user.dto'
+import { ResetPassDTO, CreateEmployeeDTO, ResetMyPassDTO } from './user.dto'
 import { CryptoUtil } from '@utils/crypto.util'
 import { JwtService } from '@nestjs/jwt'
 import { ApiErrorCode } from '@common/enum/api-error-code.enum'
@@ -88,6 +88,13 @@ export class UserService {
   async findById(id: string): Promise<IUser> {
     return await this.userModel.findById(id).lean().exec()
   }
+
+  // 根据id查找
+  async updateById(id: string, update: any): Promise<IUser> {
+    return await this.userModel.findByIdAndUpdate(id, update).lean().exec()
+  }
+
+
   // 根据账号查找
   async findByUsername(username: string) {
     return await this.userModel
@@ -223,6 +230,16 @@ export class UserService {
     } else {
       return { status: 400, code: 4008 };
     }
+  }
+
+
+
+  // 重置密码
+  async resetMyPassword(user: IUser, reset: ResetMyPassDTO) {
+    await this.cryptoUtil.checkPassword(reset.password, user.password)
+    const password = await this.cryptoUtil.encryptPassword(md5(reset.newPassword))
+    await this.userModel.findByIdAndUpdate(user._id, { password });
+    return { status: 200, msg: 'success' }
   }
 
   // 重置密码token校验

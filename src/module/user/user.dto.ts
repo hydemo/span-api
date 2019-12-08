@@ -153,3 +153,37 @@ export class LoginDTO {
   @ApiModelProperty({ description: '密码' })
   password: string;
 }
+
+export class UpdateDTO {
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '用户名' })
+  readonly username: string;
+
+
+  @IsEmail()
+  @Type(() => String)
+  @ApiModelProperty({ description: '邮箱' })
+  readonly email: string;
+
+
+  @IsMobilePhone('zh-CN')
+  @Type(() => String)
+  @ApiModelPropertyOptional({ description: '手机号' })
+  readonly phone?: string;
+
+}
+
+export class ResetMyPassDTO {
+
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '旧密码' })
+  readonly password: string;
+
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '新密码' })
+  readonly newPassword: string;
+
+}

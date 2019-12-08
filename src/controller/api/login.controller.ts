@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from 'src/module/user/user.service';
-import { CreateUserDTO, LoginDTO, ResetPassDTO, EmailPassDTO } from 'src/module/user/user.dto';
+import { CreateUserDTO, LoginDTO, ResetPassDTO, EmailPassDTO, UpdateDTO, ResetMyPassDTO } from 'src/module/user/user.dto';
 
 
 @ApiUseTags('api/user')
@@ -27,6 +27,24 @@ export class ApiUserController {
   ) {
     const clientIp = req.headers['x-real-ip'] ? req.headers['x-real-ip'] : req.ip.replace(/::ffff:/, '');
     return await this.userService.login(login.username, login.password, clientIp);
+  }
+
+  @Put('/update')
+  @ApiOperation({ title: '注册企业', description: '注册企业' })
+  async update(
+    @Body() update: UpdateDTO,
+    @Request() req: any
+  ) {
+    return await this.userService.updateById(req.user._id, update);
+  }
+
+  @Put('/password')
+  @ApiOperation({ title: '注册企业', description: '注册企业' })
+  async resetMyPassword(
+    @Body() reset: ResetMyPassDTO,
+    @Request() req: any
+  ) {
+    return await this.userService.resetMyPassword(req.user, reset);
   }
 
   @UseGuards(AuthGuard())
