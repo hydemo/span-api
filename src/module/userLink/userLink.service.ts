@@ -55,6 +55,7 @@ export class UserLinkService {
   }
 
   async upload(path: string, filename: string) {
+    await this.genUser()
     const workbook = XLSX.readFile(`${path}/${filename}`);
     const sheetNames = workbook.SheetNames;
     const data: any = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNames[0]])
@@ -64,7 +65,13 @@ export class UserLinkService {
       const score = choice === 'N' ? 0 : 1
       if (score === 0) { return }
       const user = await this.getUser(i.rater)
+      if (!user) {
+        return
+      }
       const ratee = await this.getUser(i.ratee)
+      if (!ratee) {
+        return
+      }
       const exist = await client.hget(i.ratee, i.rater)
       let both = false
       if (exist) {
@@ -81,11 +88,11 @@ export class UserLinkService {
         //被评价人姓名
         rateeName: ratee.userinfo.fullname,
         //问卷id
-        questionnaire: '5db3555b13fd873dd6b450b5',
+        questionnaire: '5ded6cddc5e59f3214f91a08',
         //企业id
-        companyProject: '5dd7c69ee7d3c21fc24258bb',
+        companyProject: '5dee510b32b4424f46c3d09d',
         // 量表id
-        scale: '5db344eb13fd873dd6b44fff',
+        scale: '5ded6641c5e59f3214f9198f',
         //层级线
         raterLayerLine: user.layerLine,
         // 部门id
@@ -106,20 +113,91 @@ export class UserLinkService {
       await this.userLinkModel.create(newUserLink)
     }))
     console.log('end')
+
     // console.log(data, 'aa')
     // return worksheet;
 
   }
 
-  async getUser(email: string) {
+  async uploadSocial(path: string, filename: string) {
+    const workbook = XLSX.readFile(`${path}/${filename}`);
+    const sheetNames = workbook.SheetNames;
+    const data: any = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNames[0]])
     const client = this.redis.getClient()
-    const user = await client.hget('user', email)
+    await Promise.all(data.map(async i => {
+      const choice = i.choice
+      const score = Number(choice)
+      if (score === 0) { return }
+      const user = await this.getUser(i.rater)
+      if (!user) {
+        return
+      }
+      const ratee = await this.getUser(i.ratee)
+      if (!ratee) {
+        return
+      }
+      const exist = await client.hget(i.ratee, i.rater)
+      let both = false
+      if (exist) {
+        both = true
+      }
+      await client.hincrby(i.rater, i.ratee, 1)
+      const newUserLink = {
+        //评价人
+        raterId: user._id,
+        //评价人姓名
+        raterName: user.userinfo.fullname,
+        //被评价人
+        rateeId: ratee._id,
+        //被评价人姓名
+        rateeName: ratee.userinfo.fullname,
+        //问卷id
+        questionnaire: '5ded6cddc5e59f3214f91a08',
+        //企业id
+        companyProject: '5dee510b32b4424f46c3d09d',
+        // 量表id
+        scale: '5ded6641c5e59f3214f9198f',
+        //层级线
+        raterLayerLine: user.layerLine,
+        // 部门id
+        raterLayerId: user.layerId,
+        //层级线
+        rateeLayerLine: ratee.layerLine,
+        // 部门id
+        rateeLayerId: ratee.layerId,
+        //分数
+        score,
+        // 评价人层级
+        raterLayer: user.layer,
+        // 被评价人层级
+        rateeLayer: ratee.layer,
+        both,
+      }
+      console.log(111)
+      await this.userLinkModel.create(newUserLink)
+    }))
+    console.log('end')
+
+    // console.log(data, 'aa')
+    // return worksheet;
+
+  }
+
+  async getUser(name: string) {
+    const client = this.redis.getClient()
+    const user = await client.hget('5dee46ad8670b9c75ee04223', name)
     if (user) {
       return JSON.parse(user)
     }
-    const newUser = await this.userService.findOneByCondition({ email })
-    await client.hset('user', email, JSON.stringify(newUser))
-    return newUser
+    return null
+  }
+
+  async genUser() {
+    const users = await this.userService.findByCondition({ companyId: '5dee46ad8670b9c75ee04223' })
+    const client = this.redis.getClient()
+    await Promise.all(users.map(async user => {
+      await client.hset('5dee46ad8670b9c75ee04223', user.userinfo.fullname, JSON.stringify(user))
+    }))
   }
 
 

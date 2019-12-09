@@ -372,7 +372,7 @@ export class FeedbackService {
       if (_.findIndex(categorys, { id: String(link.rateeLayerLine[layer].layerId) }) < 0) {
         categorys.push({
           id: String(link.rateeLayerLine[layer].layerId),
-          name: link.raterLayeeLine[layer].layerName
+          name: link.raterLayerLine[layer].layerName
         })
       }
       const raterIndex = indexObject[String(link.raterId)]

@@ -37,6 +37,7 @@ import { ApiQuestionnaireController } from './controller/api/questionnaire.contr
 import { ApiOrganizationController } from './controller/api/organization.controller';
 import { FeedbackModule } from './module/feedback/feedback.module';
 import { ApiFeedbackController } from './controller/api/feedback.controller';
+import { CMSLinkController } from './controller/cms/test.controller';
 // import { CMSLinkController } from './controller/cms/test.controller';
 
 @Module({
@@ -78,7 +79,7 @@ import { ApiFeedbackController } from './controller/api/feedback.controller';
     CMSScaleController,
     CMSQuestionnaireController,
     CMSProjectController,
-    // CMSLinkController,
+    CMSLinkController,
     CompanyUserController,
     CompanyEmployeeController,
     CompanyOrganizationController,

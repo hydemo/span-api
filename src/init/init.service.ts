@@ -21,7 +21,6 @@ export class InitService {
     //   const rateeLayer = userLink.rateeLayerLine.length
     //   await this.userLinkService.findByIdAndUpdate(userLink._id, { raterLayer, rateeLayer })
     // }))
-    console.log(md5('1234567'))
     const adminExist = await this.adminService.countByCondition({})
     if (!adminExist) {
       const admin: CreateAdminDTO = {
