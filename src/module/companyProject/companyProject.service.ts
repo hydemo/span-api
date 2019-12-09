@@ -166,6 +166,7 @@ export class CompanyProjectService {
         companyProject: companyProject._id
       })
     }))
+    await client.del(`userProject_${id}`)
     return { status: 200 }
   }
 
