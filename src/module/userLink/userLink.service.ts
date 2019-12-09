@@ -60,6 +60,7 @@ export class UserLinkService {
     const sheetNames = workbook.SheetNames;
     const data: any = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNames[0]])
     const client = this.redis.getClient()
+    console.log(data, 'aa')
     await Promise.all(data.map(async i => {
       const choice = i.choice
       const score = choice === 'N' ? 0 : 1
@@ -90,7 +91,7 @@ export class UserLinkService {
         //问卷id
         questionnaire: '5ded6cddc5e59f3214f91a08',
         //企业id
-        companyProject: '5dee510b32b4424f46c3d09d',
+        companyProject: '5dee519c32b4424f46c3d59c',
         // 量表id
         scale: '5ded6641c5e59f3214f9198f',
         //层级线
@@ -126,6 +127,7 @@ export class UserLinkService {
     const client = this.redis.getClient()
     await Promise.all(data.map(async i => {
       const choice = i.choice
+
       const score = Number(choice)
       if (score === 0) { return }
       const user = await this.getUser(i.rater)
@@ -154,9 +156,9 @@ export class UserLinkService {
         //问卷id
         questionnaire: '5ded6cddc5e59f3214f91a08',
         //企业id
-        companyProject: '5dee510b32b4424f46c3d09d',
+        companyProject: '5dee519c32b4424f46c3d59c',
         // 量表id
-        scale: '5ded6641c5e59f3214f9198f',
+        scale: '5ded6ab2c5e59f3214f919cd',
         //层级线
         raterLayerLine: user.layerLine,
         // 部门id
@@ -185,7 +187,7 @@ export class UserLinkService {
 
   async getUser(name: string) {
     const client = this.redis.getClient()
-    const user = await client.hget('5dee46ad8670b9c75ee04223', name)
+    const user = await client.hget('5dee46ad8670b9c75ee04225', name)
     if (user) {
       return JSON.parse(user)
     }
@@ -193,10 +195,10 @@ export class UserLinkService {
   }
 
   async genUser() {
-    const users = await this.userService.findByCondition({ companyId: '5dee46ad8670b9c75ee04223' })
+    const users = await this.userService.findByCondition({ companyId: '5dee46ad8670b9c75ee04225' })
     const client = this.redis.getClient()
     await Promise.all(users.map(async user => {
-      await client.hset('5dee46ad8670b9c75ee04223', user.userinfo.fullname, JSON.stringify(user))
+      await client.hset('5dee46ad8670b9c75ee04225', user.userinfo.fullname, JSON.stringify(user))
     }))
   }
 

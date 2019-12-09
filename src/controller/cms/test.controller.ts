@@ -42,6 +42,28 @@ export class CMSLinkController {
   }
 
 
+  @Post('/social')
+  // @UseGuards(AuthGuard())
+  @ApiConsumes('multipart/form-data')
+  @ApiImplicitFile({ name: 'file', required: true, description: '修改头像' })
+  @UseInterceptors(FileInterceptor('file', {
+    storage: multer.diskStorage({
+      destination: join('temp/excel')
+      , filename: (req, file, cb) => {
+        const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
+        cb(null, `${randomName}${extname(file.originalname)}`);
+      },
+    }),
+  }))
+  async social(
+    @Request() req,
+    @UploadedFile() file,
+    // @Query('company', new MongodIdPipe()) company: string
+  ) {
+    return await this.userLinkService.uploadSocial('temp/excel', file.filename)
+  }
+
+
 
 
 }
