@@ -56,11 +56,13 @@ export class UserLinkService {
 
   async upload(path: string, filename: string) {
     await this.genUser()
+    const store = {}
     const workbook = XLSX.readFile(`${path}/${filename}`);
     const sheetNames = workbook.SheetNames;
     const data: any = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNames[0]])
-    const client = this.redis.getClient()
-    console.log(data, 'aa')
+    data.map(t => {
+      store[`${t.rater}-${t.ratee}`] = 1
+    })
     await Promise.all(data.map(async i => {
       const choice = i.choice
       const score = choice === 'N' ? 0 : 1
@@ -73,12 +75,11 @@ export class UserLinkService {
       if (!ratee) {
         return
       }
-      const exist = await client.hget(i.ratee, i.rater)
+      const exist = store[`${i.ratee}-${i.rater}`]
       let both = false
       if (exist) {
         both = true
       }
-      await client.hincrby(i.rater, i.ratee, 1)
       const newUserLink = {
         //评价人
         raterId: user._id,
@@ -123,8 +124,11 @@ export class UserLinkService {
   async uploadSocial(path: string, filename: string) {
     const workbook = XLSX.readFile(`${path}/${filename}`);
     const sheetNames = workbook.SheetNames;
+    const store = {}
     const data: any = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNames[0]])
-    const client = this.redis.getClient()
+    data.map(t => {
+      store[`${t.rater}-${t.ratee}`] = 1
+    })
     await Promise.all(data.map(async i => {
       const choice = i.choice
 
@@ -138,12 +142,11 @@ export class UserLinkService {
       if (!ratee) {
         return
       }
-      const exist = await client.hget(i.ratee, i.rater)
+      const exist = store[`${i.ratee}-${i.rater}`]
       let both = false
       if (exist) {
         both = true
       }
-      await client.hincrby(i.rater, i.ratee, 1)
       const newUserLink = {
         //评价人
         raterId: user._id,
