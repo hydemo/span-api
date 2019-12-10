@@ -61,12 +61,13 @@ export class ApiOrganizationController {
     @Query('isLeader') isLeader: string
   ) {
     const condition: any = { layerId: id, isDelete: false }
-    if (isLeader = 'leader') {
+    if (isLeader === 'leader') {
       condition.isLeader = true
     }
-    if (isLeader = 'staff') {
+    if (isLeader === 'staff') {
       condition.isLeader = false
     }
+    console.log(condition, 'dds')
     const data = await this.userService.findByCondition(condition)
     return { status: 200, data }
   }
