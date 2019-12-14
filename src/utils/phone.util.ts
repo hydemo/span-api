@@ -41,6 +41,7 @@ export class PhoneUtil {
           return resolve(true)
         }
       }, (err) => {
+        console.log(err, 'err')
         return resolve(false);
       })
     });
@@ -56,12 +57,12 @@ export class PhoneUtil {
     const client = this.redis.getClient()
     const storeCode = await client.get(phone);
     if (!storeCode) {
-      return { status: 400, code: 4043, msg: 'code expire' }
+      throw new ApiException('验证码已过期', ApiErrorCode.INPUT_ERROR, 406)
     }
     if (storeCode === code) {
       return { status: 200, code: 2050 }
     } else {
-      return { status: 400, code: 4044, msg: 'code error' }
+      throw new ApiException('验证码有误', ApiErrorCode.INPUT_ERROR, 406)
     }
   }
 }

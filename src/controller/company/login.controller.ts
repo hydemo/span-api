@@ -60,7 +60,7 @@ export class CompanyUserController {
   async sendResetPassEmail(
     @Body() reset: CompanyEmailPassDTO,
     @Request() req): Promise<any> {
-    return await this.companyService.sendResetPassEmail(reset.username, reset.language)
+    return await this.companyService.sendResetPassEmail(reset.username, 'zh')
   }
 
   @Post('/phone/activation')
@@ -105,7 +105,7 @@ export class CompanyUserController {
   async passforget(
     @Body() reset: CompanyResetPassDTO,
   ): Promise<any> {
-    return await this.companyService.resetPassword(reset.username, reset)
+    return await this.companyService.resetPassword(reset)
   }
 
   @Get('/passforget')

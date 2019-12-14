@@ -1,7 +1,6 @@
 import { Model } from 'mongoose'
 import { Inject, Injectable } from '@nestjs/common'
 import { IUserAnswer } from './userAnswer.interfaces';
-import { CreateUserAnswerDTO } from './userAnswer.dto';
 
 @Injectable()
 export class UserAnswerService {
@@ -18,5 +17,23 @@ export class UserAnswerService {
   // 删除数据
   async deleteById(id: string) {
     return await this.userAnswerModel.findByIdAndDelete(id)
+  }
+
+  async aggregate(condition) {
+    console.log(condition, 'aa')
+    return this.userAnswerModel.aggregate([
+      { $match: condition },
+      {
+        $group: {
+          _id: null,
+          count: {
+            $sum: 1
+          },
+          avg: {
+            $avg: '$completeTime'
+          }
+        }
+      }
+    ])
   }
 }

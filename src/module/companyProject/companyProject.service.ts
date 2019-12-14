@@ -1,21 +1,17 @@
 import { Model } from 'mongoose'
+import * as mongoose from 'mongoose';
+
 import { RedisService } from 'nestjs-redis'
 import { Inject, Injectable } from '@nestjs/common'
-import { CryptoUtil } from '@utils/crypto.util'
-import { JwtService } from '@nestjs/jwt'
-import { EmailUtil } from 'src/utils/email.util'
-import { ConfigService } from 'src/config/config.service'
-import { PhoneUtil } from 'src/utils/phone.util'
 import { ICompanyProject } from './companyProject.interfaces';
-import { CreateCompanyProjectDTO } from './companyProject.dto';
 import { Pagination } from 'src/common/dto/pagination.dto';
-import { IAdmin } from '../admin/admin.interfaces';
 import { ICompany } from '../company/company.interfaces';
 import { UserService } from '../user/user.service';
 import { UserQuestionnaireService } from '../userQuestionnaire/userQuestionnaire.service';
 import { UserProjectService } from '../userProject/userProject.service';
 import { ApiException } from 'src/common/expection/api.exception';
 import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
+import { UserAnswerService } from '../userAnswer/userAnswer.service'
 
 @Injectable()
 export class CompanyProjectService {
@@ -24,6 +20,7 @@ export class CompanyProjectService {
     @Inject(RedisService) private readonly redis: RedisService,
     @Inject(UserService) private readonly userService: UserService,
     @Inject(UserProjectService) private readonly userProjectService: UserProjectService,
+    @Inject(UserAnswerService) private readonly userAnswerService: UserAnswerService,
     @Inject(UserQuestionnaireService) private readonly userQuestionnaireService: UserQuestionnaireService,
   ) { }
 
@@ -69,9 +66,19 @@ export class CompanyProjectService {
     const search = [{ companyProject: new RegExp(pagination.value || '', "i") }];
     const condition = { $or: search };
     return await this.companyProjectModel.find(condition)
-      .limit(500)
       .sort({ companyProject: 1 })
-      .select({ companyProject: 1 })
+      .lean()
+      .exec();
+  }
+
+  // 查询全部数据
+  async myProjects(pagination: Pagination, user: ICompany) {
+    const condition = { company: user.companyId };
+    return await this.companyProjectModel.find(condition)
+      .limit(500)
+      .skip((pagination.current - 1) * pagination.pageSize)
+      .sort({ createdAt: -1 })
+      .populate({ path: 'project', model: 'project', populate: { path: 'questionnaires.questionnaireId', model: 'questionnaire' } })
       .lean()
       .exec();
   }
@@ -122,10 +129,9 @@ export class CompanyProjectService {
 
 
   async acceptProject(id: string, company: ICompany, questionnaires: any) {
-    console.log(questionnaires, 'ss')
     const exist = await this.companyProjectModel.findOne({ isWithDraw: false, isDelete: false, company: company.companyId, project: id })
     if (exist) {
-      return { status: 200, code: 40002, msg: 'project exist' }
+      throw new ApiException('计划已存在', ApiErrorCode.NO_PERMISSION, 403)
     }
     const companyProject = await this.companyProjectModel.create({ project: id, company: company.companyId, questionnaireSetting: questionnaires })
     const client = await this.redis.getClient()
@@ -168,6 +174,70 @@ export class CompanyProjectService {
     }))
     await client.del(`userProject_${id}`)
     return { status: 200 }
+  }
+
+  // 计划进度
+  async progress(id: string, questionnaire: string, user: ICompany) {
+    const companyProject: ICompanyProject = await this.companyProjectModel
+      .findById(id)
+      .lean()
+      .exec()
+    if (!companyProject) {
+      throw new ApiException('计划不存在', ApiErrorCode.NO_EXIST, 404)
+    }
+    if (String(companyProject.company) !== String(user.companyId)) {
+      throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const exist = companyProject.questionnaireSetting.find(o => o.questionnaire === questionnaire)
+    if (!exist) {
+      throw new ApiException('问卷有误', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const completeNum = await this.userQuestionnaireService.count({
+      companyProject: id,
+      questionnaire,
+      isCompleted: true
+    });
+    const total = await this.userQuestionnaireService.count({
+      companyProject: id,
+      questionnaire,
+    });
+    const userResult = await this.userAnswerService.aggregate({
+      companyProject: mongoose.Types.ObjectId(id),
+      questionnaire: mongoose.Types.ObjectId(questionnaire),
+    });
+    let completeAverage;
+    let evaluateNum;
+    console.log(userResult, 'userResult')
+    if (userResult.length) {
+      completeAverage = userResult[0].avg.toFixed(3);
+      evaluateNum = userResult[0].count;
+    }
+    return {
+      total,
+      completeNum,
+      completeAverage,
+      evaluateNum
+    };
+  }
+
+  async updateProject(id: string, questionnaireId: string, questionnaire: any, user: ICompany) {
+    const companyProject: ICompanyProject = await this.companyProjectModel
+      .findById(id)
+      .lean()
+      .exec()
+    if (!companyProject) {
+      throw new ApiException('计划不存在', ApiErrorCode.NO_EXIST, 404)
+    }
+    if (String(companyProject.company) !== String(user.companyId)) {
+      throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const exist = companyProject.questionnaireSetting.find(o => o.questionnaire === questionnaireId)
+    if (!exist) {
+      throw new ApiException('问卷有误', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    exist.leaderFeedback = questionnaire.leaderFeedback
+    exist.staffFeedback = questionnaire.staffFeedback
+    await this.companyProjectModel.findByIdAndUpdate(id, { questionnaireSetting: companyProject.questionnaireSetting })
   }
 
 }

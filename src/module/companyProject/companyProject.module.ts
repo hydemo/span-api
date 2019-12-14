@@ -11,6 +11,7 @@ import { UserModule } from '../user/user.module';
 import { UserProjectModule } from '../userProject/userProject.module';
 import { UserQuestionnaireModule } from '../userQuestionnaire/userQuestionnaire.module';
 import { RedisModule } from 'nestjs-redis';
+import { UserAnswerModule } from '../userAnswer/userAnswer.module';
 
 @Module({
   providers: [
@@ -27,6 +28,7 @@ import { RedisModule } from 'nestjs-redis';
     UserProjectModule,
     UserQuestionnaireModule,
     RedisModule,
+    UserAnswerModule,
   ],
 })
 

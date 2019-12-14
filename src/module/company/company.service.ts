@@ -31,11 +31,11 @@ export class CompanyService {
   async register(createCompanyDTO: CreateCompanyDTO) {
     const phoneExist = await this.companyModel.findOne({ phone: createCompanyDTO.phone, isDelete: false })
     if (phoneExist) {
-      return { status: 200, code: 40001, msg: 'phoneExist' }
+      throw new ApiException('手机号已被注册', ApiErrorCode.PHONE_EXIST, 406)
     }
     const emailExist = await this.companyModel.findOne({ email: createCompanyDTO.email, isDelete: false })
     if (emailExist) {
-      return { status: 200, code: 40002, msg: 'emailExist' }
+      throw new ApiException('邮箱已被注册', ApiErrorCode.EMAIL_EXIST, 406)
     }
     const data = await this.phonUtil.codeCheck(createCompanyDTO.phone, createCompanyDTO.code)
     if (data.status !== 200) {
@@ -85,14 +85,14 @@ export class CompanyService {
     const company: any = await this.findByUsername(username)
     // 判断账号是否存在
     if (!company) {
-      return { status: 400, code: 4013 };
+      throw new ApiException('账号不存在', ApiErrorCode.NO_EXIST, 404)
     }
     //判断账号是否被删除
     if (company.isDelete) {
-      return { status: 400, code: 4024 };
+      throw new ApiException('账号已删除', ApiErrorCode.NO_EXIST, 404)
     }
     if (!this.cryptoUtil.checkPassword(password, company.password)) {
-      return { status: 400, code: 4011 };
+      throw new ApiException('密码有误', ApiErrorCode.PASSWORD_INVALID, 406)
     }
     const token = await this.jwtService.sign({ id: company._id, type: 'company' })
     const client = this.redis.getClient()
@@ -110,14 +110,14 @@ export class CompanyService {
     const company: any = await this.findByUsername(username)
     // 判断账号是否存在
     if (!company) {
-      return { status: 400, code: 4013 };
+      throw new ApiException('账号不存在', ApiErrorCode.NO_EXIST, 404)
     }
     //判断账号是否被删除
     if (company.isDelete) {
-      return { status: 400, code: 4024 };
+      throw new ApiException('账号已删除', ApiErrorCode.NO_EXIST, 404)
     }
     const mailToken = await this.jwtService.sign({ id: company._id, type: 'company' })
-    const url = `${this.config.api_url}/company/passforget`
+    const url = `${this.config.company_url}/#/password?token=${mailToken}`
     const mail = await this.emailUtil.sendResetPassMail(company.email, mailToken, language, url)
     return mail
   }
@@ -128,14 +128,14 @@ export class CompanyService {
     const company: any = await this.findByUsername(username)
     // 判断账号是否存在
     if (!company) {
-      return { status: 400, code: 4013 };
+      throw new ApiException('账号不存在', ApiErrorCode.NO_EXIST, 404)
     }
     //判断账号是否被删除
     if (company.isDelete) {
-      return { status: 400, code: 4024 };
+      throw new ApiException('账号已删除', ApiErrorCode.NO_EXIST, 404)
     }
     if (!company.phone) {
-      return { status: 400, code: 4015 }
+      throw new ApiException('账号有误', ApiErrorCode.NO_EXIST, 404)
     }
     const phone = company.phone
     const replaceStr = phone.substring(4, 8)
@@ -145,7 +145,7 @@ export class CompanyService {
     if (msg) {
       return { status: 200, code: 2049, phone: telephone }
     } else {
-      return { status: 400, code: 4042 }
+      throw new ApiException('发送失败', ApiErrorCode.INTERNAL_ERROR, 406)
     }
   }
 
@@ -158,7 +158,7 @@ export class CompanyService {
     if (msg) {
       return { status: 200, code: 2049, phone: telephone }
     } else {
-      return { status: 400, code: 4042 }
+      throw new ApiException('发送失败', ApiErrorCode.INTERNAL_ERROR, 406)
     }
   }
 
@@ -167,14 +167,14 @@ export class CompanyService {
     const company: any = await this.findByUsername(username)
     // 判断账号是否存在
     if (!company) {
-      return { status: 400, code: 4013 };
+      throw new ApiException('账号不存在', ApiErrorCode.NO_EXIST, 404)
     }
     //判断账号是否被删除
     if (company.isDelete) {
-      return { status: 400, code: 4024 };
+      throw new ApiException('账号已删除', ApiErrorCode.NO_EXIST, 404)
     }
     if (!company.phone) {
-      return { status: 400, code: 4015 }
+      throw new ApiException('账号有误', ApiErrorCode.NO_EXIST, 404)
     }
     const msg: any = await this.phonUtil.codeCheck(company.phone, code)
     if (msg.status === 200) {
@@ -184,26 +184,15 @@ export class CompanyService {
   }
 
   // 重置密码
-  async resetPassword(username: string, reset: CompanyResetPassDTO) {
-    const company: any = await this.findByUsername(username)
-    // 判断账号是否存在
-    if (!company) {
-      return { status: 400, code: 4013 };
-    }
-    //判断账号是否被删除
-    if (company.isDelete) {
-      return { status: 400, code: 4024 };
-    }
-    if (reset.password !== reset.confirm) {
-      return { status: 400, code: 4022 }
-    }
-    const password = await this.cryptoUtil.encryptPassword(md5(reset.password))
+  async resetPassword(reset: CompanyResetPassDTO) {
+    const password = await this.cryptoUtil.encryptPassword(reset.password)
     const msg = await this.jwtService.verify(reset.token);
-    if (msg.type === 'company' && msg.id === String(company._id)) {
-      await this.companyModel.findByIdAndUpdate(company._id, { password });
+    console.log(msg, 'msge')
+    if (msg.type === 'company') {
+      await this.companyModel.findByIdAndUpdate(msg.id, { password });
       return { status: 200, code: 2012 };
     } else {
-      return { status: 400, code: 4008 };
+      throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 404)
     }
   }
 
@@ -212,9 +201,9 @@ export class CompanyService {
     try {
       await this.jwtService.verify(token)
     } catch (error) {
-      return res.redirect(`${this.config.cms_url}/resetpasswordOverTime`);
+      return res.redirect(`${this.config.company_url}/resetpasswordOverTime`);
     }
     return res
-      .redirect(`${this.config.cms_url}/resetpassword?token=${token}`);
+      .redirect(`${this.config.company_url}/#/password?token=${token}`);
   }
 }

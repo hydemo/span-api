@@ -83,29 +83,13 @@ export class CompanyEmailPassDTO {
   @Type(() => String)
   @ApiModelProperty({ description: '用户名' })
   readonly username: string;
-
-  @IsString()
-  @IsEnum(['zh', 'en-US'])
-  @Type(() => String)
-  @ApiModelProperty({ description: '语言' })
-  readonly language: string;
 }
 
 export class CompanyResetPassDTO {
   @IsString()
   @Type(() => String)
-  @ApiModelProperty({ description: '用户名' })
-  readonly username: string;
-
-  @IsString()
-  @Type(() => String)
   @ApiModelProperty({ description: '新密码' })
   readonly password: string;
-
-  @IsString()
-  @Type(() => String)
-  @ApiModelProperty({ description: '确认密码' })
-  readonly confirm: string;
 
   @IsString()
   @Type(() => String)

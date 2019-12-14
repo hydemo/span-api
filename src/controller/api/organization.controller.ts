@@ -67,7 +67,6 @@ export class ApiOrganizationController {
     if (isLeader === 'staff') {
       condition.isLeader = false
     }
-    console.log(condition, 'dds')
     const data = await this.userService.findByCondition(condition)
     return { status: 200, data }
   }
