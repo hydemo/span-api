@@ -223,6 +223,7 @@ export class CompanyProjectService {
 
   // 计划进度
   async download(id: string, questionnaire: string, user: ICompany) {
+    console.log(user, 'user')
     const companyProject: ICompanyProject = await this.companyProjectModel
       .findById(id)
       .lean()

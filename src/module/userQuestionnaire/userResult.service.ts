@@ -373,7 +373,7 @@ export class UserResultService {
           }
 
           filterSheet[`E${cursor}`] = {
-            v: c.choose
+            v: c.choose ? c.choose : 'Y'
           };
           const wchE = this.getStringLength(c.choose);
           if (wchE > col[4].wch) {

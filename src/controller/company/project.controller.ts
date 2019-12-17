@@ -86,45 +86,42 @@ export class CompanyProjectController {
     @Request() req: any,
     @Response() res: any
   ) {
-    try {
-      const userAgent = (req.headers["user-agent"] || "").toLowerCase();
-      const { filename } = await this.companyProjectService.download(id, questionnaireId, req.uer)
-      const path = `temp/download/excel/${filename}`;
-      let disposition;
-      if (userAgent.indexOf("msie") >= 0 || userAgent.indexOf("chrome") >= 0) {
-        disposition = `attachment; filename=${encodeURIComponent(filename)}`;
-      } else if (userAgent.indexOf("firefox") >= 0) {
-        disposition = `attachment; filename*="utf8''${encodeURIComponent(
-          filename
-        )}"`;
-      } else {
-        /* safari等其他非主流浏览器只能自求多福了 */
-        disposition = `attachment; filename=${new Buffer(filename).toString(
-          "binary"
-        )}`;
-      }
-      res.writeHead(200, {
-        "Content-Type": "application/octet-stream;charset=utf8",
-        "Content-Disposition": disposition
-      });
-      const stream = fs.createReadStream(path);
-      stream.pipe(res);
-      stream
-        .on("end", () => {
-          fs.exists(path, exists => {
-            if (exists)
-              fs.unlink(path, err => {
-                console.log(err)
-              });
-          });
-          return;
-        })
-        .on("error", err => {
-          throw new ApiException('服务器异常', ApiErrorCode.INTERNAL_ERROR, 500)
-        });
-    } catch (error) {
-      throw new ApiException('服务器异常', ApiErrorCode.INTERNAL_ERROR, 500)
+    const userAgent = (req.headers["user-agent"] || "").toLowerCase();
+    const { filename } = await this.companyProjectService.download(id, questionnaireId, req.user)
+    const path = `temp/download/excel/${filename}`;
+    let disposition;
+    if (userAgent.indexOf("msie") >= 0 || userAgent.indexOf("chrome") >= 0) {
+      disposition = `attachment; filename=${encodeURIComponent(filename)}`;
+    } else if (userAgent.indexOf("firefox") >= 0) {
+      disposition = `attachment; filename*="utf8''${encodeURIComponent(
+        filename
+      )}"`;
+    } else {
+      /* safari等其他非主流浏览器只能自求多福了 */
+      disposition = `attachment; filename=${new Buffer(filename).toString(
+        "binary"
+      )}`;
     }
+    res.writeHead(200, {
+      "Content-Type": "application/octet-stream;charset=utf8",
+      "Content-Disposition": disposition
+    });
+    const stream = fs.createReadStream(path);
+    stream.pipe(res);
+    stream
+      .on("end", () => {
+        fs.exists(path, exists => {
+          if (exists)
+            fs.unlink(path, err => {
+              console.log(err)
+            });
+        });
+        return;
+      })
+      .on("error", err => {
+        throw new ApiException('服务器异常', ApiErrorCode.INTERNAL_ERROR, 500)
+      });
+
   }
 
 
