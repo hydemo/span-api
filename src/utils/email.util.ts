@@ -23,7 +23,6 @@ export class EmailUtil {
         await transporter.sendMail(mailOption);
         i = 5;
       } catch (error) {
-        console.log(error, 'error')
         if (i === 4) {
           return { status: 400, code: 4020 };//返回邮件发送错误code
         }
@@ -48,7 +47,6 @@ export class EmailUtil {
   async sendActiveMail(who, token, language, url) {
     const from = util.format('%s <%s>',
       this.config.name, this.config.mail_opts.auth.user);
-    console.log(from, 'from')
     const to = who;
     let subject;
     let html;
@@ -76,7 +74,6 @@ export class EmailUtil {
   async sendResetPassMail(who, token, language, url) {
     const from = util.format('%s <%s>',
       this.config.name, this.config.mail_opts.auth.user);
-    console.log(from, 'from')
     const to = who;
     let subject;
     let html;
@@ -101,19 +98,45 @@ export class EmailUtil {
    * @author: jv
    */
 
-  async sendIncompleteQuestionnaireMail(who, language, questionnaireName) {
+  async sendNotice(who, content) {
     const from = util.format('%s <%s>',
       this.config.name, this.config.mail_opts.auth.user);
     const to = who;
     let subject;
     let html;
-    if (language === 'zh') {
-      subject = '问卷作答提醒';
-      html = `请及时完成问卷:${questionnaireName}`
-    } else {
-      subject = 'Questionnaire response reminder';
-      html = `Please complete the questionnaire in time:${questionnaireName}`;
-    }
+    // if (language === 'zh') {
+    subject = '您有一份问卷计划还未完成，请尽快完成。';
+    html = content
+    // } else {
+    // subject = 'Questionnaire response reminder';
+    // html = `Please complete the questionnaire in time:${questionnaireName}`;
+    // }
+    const mailOption = { from, to, subject, html };
+    return await this.sendMail(mailOption);
+  }
+
+  /**
+   * ----{发送未完成问卷邮件}----
+   * @param {String} who 账号邮箱 
+   * @param {String} language 语言类型
+   * @param {String} questionnaireName 问卷名字
+   * @returns {Object} 返回邮箱发送结果code
+   * @author: jv
+   */
+
+  async sendProjectNotify(who, content) {
+    const from = util.format('%s <%s>',
+      this.config.name, this.config.mail_opts.auth.user);
+    const to = who;
+    let subject;
+    let html;
+    // if (language === 'zh') {
+    subject = '您收到一份新的问卷计划，请尽快完成。';
+    html = content
+    // } else {
+    // subject = 'Questionnaire response reminder';
+    // html = `Please complete the questionnaire in time:${questionnaireName}`;
+    // }
     const mailOption = { from, to, subject, html };
     return await this.sendMail(mailOption);
   }

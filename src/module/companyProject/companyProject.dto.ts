@@ -8,3 +8,10 @@ export class CreateCompanyProjectDTO {
   @ApiModelProperty({ description: '名称' })
   readonly companyProject: string;
 }
+
+export class EmailContentDTO {
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '邮件内容' })
+  readonly content: string;
+}

@@ -21,6 +21,15 @@ export class UserProjectService {
     return await this.userProjectModel.findOne({ userProject })
   }
 
+  // 根据标签名获取
+  async findByCondition(condition: any): Promise<IUserProject[]> {
+    return await this.userProjectModel
+      .find(condition)
+      .populate({ path: 'user', model: 'user' })
+      .lean()
+      .exec()
+  }
+
   // 查询全部数据
   async list(user: string) {
     const projects = await this.userProjectModel
@@ -49,7 +58,7 @@ export class UserProjectService {
   }
 
   // 完成计划
-  async complete(companyProject: string, user: string) {
+  async complete(companyProject: string, user: any) {
     return await this.userProjectModel.findOneAndUpdate({ companyProject, user }, { isCompleted: true })
   }
 }

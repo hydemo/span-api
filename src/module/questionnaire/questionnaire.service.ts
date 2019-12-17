@@ -417,7 +417,6 @@ export class QuestionnaireService {
       })
       .lean()
       .exec();
-    console.log(questionnaire, 'questionnaire')
     return questionnaire.subject.map(v => {
       if (v.scale) {
         return v.scale
@@ -521,7 +520,6 @@ export class QuestionnaireService {
       throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
     let scales: any = [];
-    console.log(questionnaire.subject, 'questionnaire')
     questionnaire.subject.map(async v => {
       if (v.scale) {
         if (v.scale.scaleType === 'socialScale') {

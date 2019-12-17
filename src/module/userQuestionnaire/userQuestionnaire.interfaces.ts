@@ -1,5 +1,6 @@
 import { Document } from 'mongoose';
 import { IQuestionnaire } from '../questionnaire/questionnaire.interfaces';
+import { IUser } from '../user/user.interfaces';
 
 export interface IUserQuestionnaire extends Document {
   //问卷id
@@ -7,7 +8,7 @@ export interface IUserQuestionnaire extends Document {
   //项目id
   companyProject: string;
   //用户id
-  user: string;
+  user: IUser;
   // //用户名
   // username: string;
   // //用户邮箱

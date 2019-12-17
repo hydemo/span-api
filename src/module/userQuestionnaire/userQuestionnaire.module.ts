@@ -15,6 +15,7 @@ import { OrganizationScoreModule } from '../organizationScore/organizationScore.
 import { ScaleModule } from '../scale/scale.module';
 import { UserProjectModule } from '../userProject/userProject.module';
 import { UserLinkModule } from '../userLink/userLink.module';
+import { UserResultService } from './userResult.service';
 
 @Module({
   providers: [
@@ -22,9 +23,10 @@ import { UserLinkModule } from '../userLink/userLink.module';
     CryptoUtil,
     EmailUtil,
     PhoneUtil,
+    UserResultService,
     ...userQuestionnairesProviders,
   ],
-  exports: [UserQuestionnaireService],
+  exports: [UserQuestionnaireService, UserResultService],
   imports: [
     DatabaseModule,
     QuestionnaireModule,

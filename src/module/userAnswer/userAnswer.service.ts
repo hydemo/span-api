@@ -19,8 +19,18 @@ export class UserAnswerService {
     return await this.userAnswerModel.findByIdAndDelete(id)
   }
 
+  // 根据条件查找
+  async findByCondition(condition: any) {
+    return await this.userAnswerModel
+      .find(condition)
+      .sort({
+        raterName: 1
+      })
+      .lean()
+      .exec()
+  }
+
   async aggregate(condition) {
-    console.log(condition, 'aa')
     return this.userAnswerModel.aggregate([
       { $match: condition },
       {

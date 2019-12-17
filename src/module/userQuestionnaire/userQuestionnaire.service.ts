@@ -61,7 +61,6 @@ export class UserQuestionnaireService {
       .populate({ path: 'questionnaire', model: 'questionnaire' })
       .lean()
       .exec()
-    console.log(userQuestionnaire, 'userq')
     if (!userQuestionnaire) {
       throw new ApiException('No Found', ApiErrorCode.NO_EXIST, 404)
     }
@@ -250,7 +249,6 @@ export class UserQuestionnaireService {
     if (current === 'userfilter' && (!questionnaire.userfilter || questionnaire.userfilter.length === 0)) {
       current = 'choice'
     }
-    console.log(current, 'current')
     return current
   }
 
@@ -360,9 +358,7 @@ export class UserQuestionnaireService {
       const score = currentFilter.score;
       return userfilter.filterChoose
         .map(v => {
-          console.log(option, v.choose, 'sss')
           const index = _.findIndex(option, function (o) { return String(o._id) === v.choose });
-          console.log(score, index, 'score')
           if (score[index].score >= currentFilter.filterScore) {
             return { content: v.content, email: v.email, id: v.id, rateeType: v.rateeType };
           } else {
@@ -505,12 +501,10 @@ export class UserQuestionnaireService {
         projectId: userResult.projectId
       });
     }
-    console.log(exist, 'exist')
     for (let answer of userResult.answer) {
       if (answer.type === 'scale') {
         const scale: IScale = await this.scaleService.findById(answer.scaleId);
         let score = this.getScore(answer.choice, scale.score, scale.option);
-        console.log(score, 'score')
         // score = score/(scale.question.length);
         answerScore.push({ score, scale: answer.scaleId });
         if (exist) {
@@ -577,7 +571,6 @@ export class UserQuestionnaireService {
     }
     const end = moment(Date.now());
     const completeTime = end.diff(userQuestionnaire.startTime, "minutes", true);
-    console.log(ratee, 'ratee')
     const userAnswer: any = {
       //评价人id
       raterId: user._id,
@@ -617,10 +610,8 @@ export class UserQuestionnaireService {
   // 非社会网络题
   async socialAnswer(userQuestionnaire: IUserQuestionnaire, userResult, user: IUser, project: string) {
     const end = moment(Date.now());
-    console.log(userResult, 'userResult')
     const completeTime = end.diff(userQuestionnaire.startTime, "minutes", true);
     const scales = await this.questionnaireService.getScaleOfSubject(userQuestionnaire.questionnaire._id)
-    console.log(scales, 'ssss')
     await Promise.all(
       userResult.answer[0].choice.map(async (c, i) => {
         const answer: any = [];
@@ -630,9 +621,7 @@ export class UserQuestionnaireService {
           throw new ApiException('No Found', ApiErrorCode.NO_EXIST, 404)
         }
         await Promise.all(userResult.answer.map(async (ans, subjectNum) => {
-          console.log(scales[subjectNum].option, ans.choice[i], 'ans')
           const selectIndex = _.findIndex(scales[subjectNum].option, function (o) { return String(o._id) === ans.choice[i].optionId })
-          console.log(selectIndex, 'selectIndex')
           const score = scales[subjectNum].score[selectIndex].score;
           const newUserLink = {
             //评价人

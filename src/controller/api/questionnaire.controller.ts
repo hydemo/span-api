@@ -52,7 +52,6 @@ export class ApiQuestionnaireController {
     @Body() userinfo: UserInfoAnswerDTO,
     @Request() req: any,
   ) {
-    console.log(userinfo, 'userinfo')
     const current = await this.userQuestionnaireService.userinfoAnswer(id, userinfo, req.user._id)
     return { status: 200, current }
   }
@@ -65,7 +64,6 @@ export class ApiQuestionnaireController {
   ) {
     const userQuestionnaire = await this.userQuestionnaireService.canActive(id, req.user._id)
     const data = await this.userQuestionnaireService.getUserfilter(userQuestionnaire, userQuestionnaire.userfilterChoice.length + 1)
-    console.log(data, 'data')
     return { status: 200, data }
   }
 

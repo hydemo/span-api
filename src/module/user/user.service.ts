@@ -73,7 +73,6 @@ export class UserService {
     fs.exists(xlsxPath, (exists) => {
       if (exists)
         fs.unlink(xlsxPath, (err) => {
-          console.log(err)
         });
     });
     const data = await this.organizationService.findById(id);

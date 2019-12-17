@@ -41,7 +41,6 @@ export class PhoneUtil {
           return resolve(true)
         }
       }, (err) => {
-        console.log(err, 'err')
         return resolve(false);
       })
     });

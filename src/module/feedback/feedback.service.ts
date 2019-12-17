@@ -465,16 +465,15 @@ export class FeedbackService {
       if (_.indexOf(myLinkNodeUsers, node.id) > -1) {
         myLinkNodes.push({
           id: node.id,
-          name: nameVisible || node.id === String(userId) ? node.username : '',
+          name: nameVisible || node.id === String(userId) ? node.name : '',
           linkCount: node.linkCount,
           category: _.findIndex(myLinkCategorys, { id: node.category }),
           value: node.score,
         })
       }
       return {
-
         id: node.id,
-        name: nameVisible || node.id === String(userId) ? node.username : '',
+        name: nameVisible || node.id === String(userId) ? node.name : '',
         linkCount: node.linkCount,
         category: _.findIndex(categorys, { id: node.category }),
         value: node.score,
@@ -484,6 +483,7 @@ export class FeedbackService {
         crosslevelratio: node.score > 0 ? node.userScore_otherLayer / node.score * 100 : 0,
       }
     }))
+    // console.log(newNodes, 'bbbb')
     const max = _.maxBy(newNodes, 'value')
     const indicator = this.getMyIndicator(newNodes, userId, scale)
     const departmentNet = this.getDepartmentNet(departmentUsers, userId, scale)
@@ -670,14 +670,15 @@ export class FeedbackService {
         }
       }
     }))
-    console.log(departmentKeys, 'aa')
-    const departments: any = departmentKeys.map(async department => {
+    // console.log(departmentKeys, 'cccc')
+    const departments: any = await Promise.all(departmentKeys.map(async department => {
       let deptcrossdept_deptlevel = 0
       let density_deptlevel = 0
       const userCount = await this.userService.countByCondition({ 'layerLine.layerId': department.id, isDelete: false })
       if (department.departmentOtherScore || department.departmentScore) {
         deptcrossdept_deptlevel = department.departmentScore / (department.departmentScore + department.departmentOtherScore)
       }
+
       if (department.departmentScore) {
         const Max = max * userCount * (userCount - 1)
         density_deptlevel = department.departmentScore / Max
@@ -688,7 +689,6 @@ export class FeedbackService {
       if (userScores.length) {
         const maxUserScore = _.maxBy(userScores, 'score')
         let centralization = 0
-        console.log(maxUserScore, 'sss')
         userScores.map(userScore => {
           centralization += (maxUserScore.score - userScore.score)
         })
@@ -705,9 +705,10 @@ export class FeedbackService {
         reciprocity_deptlevel: (department.linkCountNoBoth > 0 || department.linkCountBoth) > 0 ? department.linkCountBoth / 2 / (department.linkCountNoBoth + department.linkCountBoth / 2) : 0,
         deptcrossdept_deptlevel,
         density_deptlevel,
+        value: department.departmentOtherScore,
         centralization_deptlevel,
       }
-    })
+    }))
 
     const myDepartment = _.find(departments, { id: String(organization._id) })
 

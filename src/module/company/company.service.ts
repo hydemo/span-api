@@ -187,7 +187,6 @@ export class CompanyService {
   async resetPassword(reset: CompanyResetPassDTO) {
     const password = await this.cryptoUtil.encryptPassword(reset.password)
     const msg = await this.jwtService.verify(reset.token);
-    console.log(msg, 'msge')
     if (msg.type === 'company') {
       await this.companyModel.findByIdAndUpdate(msg.id, { password });
       return { status: 200, code: 2012 };

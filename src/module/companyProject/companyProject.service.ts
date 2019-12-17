@@ -12,16 +12,20 @@ import { UserProjectService } from '../userProject/userProject.service';
 import { ApiException } from 'src/common/expection/api.exception';
 import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
 import { UserAnswerService } from '../userAnswer/userAnswer.service'
+import { EmailUtil } from 'src/utils/email.util';
+import { UserResultService } from '../userQuestionnaire/userResult.service';
 
 @Injectable()
 export class CompanyProjectService {
   constructor(
     @Inject('CompanyProjectModelToken') private readonly companyProjectModel: Model<ICompanyProject>,
     @Inject(RedisService) private readonly redis: RedisService,
+    @Inject(EmailUtil) private readonly emailUtil: EmailUtil,
     @Inject(UserService) private readonly userService: UserService,
     @Inject(UserProjectService) private readonly userProjectService: UserProjectService,
     @Inject(UserAnswerService) private readonly userAnswerService: UserAnswerService,
     @Inject(UserQuestionnaireService) private readonly userQuestionnaireService: UserQuestionnaireService,
+    @Inject(UserResultService) private readonly userResultService: UserResultService,
   ) { }
 
   // 创建数据
@@ -136,7 +140,6 @@ export class CompanyProjectService {
     const companyProject = await this.companyProjectModel.create({ project: id, company: company.companyId, questionnaireSetting: questionnaires })
     const client = await this.redis.getClient()
     for (let questionnaire of questionnaires) {
-      console.log(questionnaire, 'questionnaire')
       await Promise.all(questionnaire.rater.map(async rater => {
 
         let condition: any = { 'layerLine.layerId': rater, isDelete: false }
@@ -164,7 +167,6 @@ export class CompanyProjectService {
       }))
     }
     const userProjects = await client.hkeys(`userProject_${id}`)
-    console.log(userProjects.length, 'length')
     await Promise.all(userProjects.map(async key => {
       await this.userProjectService.create({
         user: key,
@@ -205,9 +207,8 @@ export class CompanyProjectService {
       companyProject: mongoose.Types.ObjectId(id),
       questionnaire: mongoose.Types.ObjectId(questionnaire),
     });
-    let completeAverage;
-    let evaluateNum;
-    console.log(userResult, 'userResult')
+    let completeAverage = 0;
+    let evaluateNum = 0;
     if (userResult.length) {
       completeAverage = userResult[0].avg.toFixed(3);
       evaluateNum = userResult[0].count;
@@ -218,6 +219,21 @@ export class CompanyProjectService {
       completeAverage,
       evaluateNum
     };
+  }
+
+  // 计划进度
+  async download(id: string, questionnaire: string, user: ICompany) {
+    const companyProject: ICompanyProject = await this.companyProjectModel
+      .findById(id)
+      .lean()
+      .exec()
+    if (!companyProject) {
+      throw new ApiException('计划不存在', ApiErrorCode.NO_EXIST, 404)
+    }
+    if (String(companyProject.company) !== String(user.companyId)) {
+      throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    return await this.userResultService.download(companyProject, questionnaire)
   }
 
   async updateProject(id: string, questionnaireId: string, questionnaire: any, user: ICompany) {
@@ -240,4 +256,36 @@ export class CompanyProjectService {
     await this.companyProjectModel.findByIdAndUpdate(id, { questionnaireSetting: companyProject.questionnaireSetting })
   }
 
+
+  async sendNotice(id: string, user: ICompany, content: string) {
+    const companyProject: ICompanyProject = await this.companyProjectModel
+      .findById(id)
+      .lean()
+      .exec()
+    if (!companyProject) {
+      throw new ApiException('计划不存在', ApiErrorCode.NO_EXIST, 404)
+    }
+    if (String(companyProject.company) !== String(user.companyId)) {
+      throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const userProjects = await this.userProjectService.findByCondition({ companyProject: id })
+    userProjects.map(user => this.emailUtil.sendNotice(user.user.email, content))
+    return
+  }
+
+  async sendUnComplete(id: string, user: ICompany, content: string) {
+    const companyProject: ICompanyProject = await this.companyProjectModel
+      .findById(id)
+      .lean()
+      .exec()
+    if (!companyProject) {
+      throw new ApiException('计划不存在', ApiErrorCode.NO_EXIST, 404)
+    }
+    if (String(companyProject.company) !== String(user.companyId)) {
+      throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const userProjects = await this.userProjectService.findByCondition({ companyProject: id, isCompleted: false })
+    userProjects.map(user => this.emailUtil.sendNotice(user.user.email, content))
+    return
+  }
 }

@@ -32,7 +32,6 @@ export class ApiProjectController {
   async projects(
     @Request() req: any,
   ) {
-    console.log(req.user._id)
     const data = await this.userProjectService.list(req.user._id)
     return { status: 200, data }
   }

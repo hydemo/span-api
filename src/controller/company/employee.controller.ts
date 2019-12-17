@@ -65,7 +65,6 @@ export class CompanyEmployeeController {
         return;
       })
       .on('error', err => {
-        console.log(err)
       });
   }
 

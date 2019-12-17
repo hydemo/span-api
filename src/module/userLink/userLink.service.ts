@@ -111,11 +111,8 @@ export class UserLinkService {
         rateeLayer: ratee.layer,
         both,
       }
-      console.log(111)
       await this.userLinkModel.create(newUserLink)
     }))
-    console.log('end')
-
     // console.log(data, 'aa')
     // return worksheet;
 
@@ -178,10 +175,8 @@ export class UserLinkService {
         rateeLayer: ratee.layer,
         both,
       }
-      console.log(111)
       await this.userLinkModel.create(newUserLink)
     }))
-    console.log('end')
 
     // console.log(data, 'aa')
     // return worksheet;
