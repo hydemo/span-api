@@ -375,4 +375,67 @@ export class UserService {
     });
     return { status: 200, code: 2053 }
   }
+
+  async updateEmployee(id: string, employee: CreateEmployeeDTO, user: ICompany, userId: string) {
+    const organization = await this.organizationService.findById(id)
+    if (!organization) {
+      return { list: [], total: 0 }
+    }
+    if (String(user.companyId) !== String(organization.companyId)) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const company = await this.organizationService.findById(user.companyId)
+    if (!company) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    let layerLine: any = []
+    if (String(id) !== String(user.companyId)) {
+      layerLine.push({
+        layerName: organization.name,
+        layerId: id,
+        parentId: organization.parent,
+        layer: organization.layer
+      })
+      await this.getLayerLine(organization.parent, layerLine)
+    }
+    const userObject: any = {
+      companyId: company._id,
+      companyName: company.name,
+      email: employee.email,
+      layer: organization.layer,
+      layerId: organization._id,
+      layerLine,
+      isLeader: employee.isLeader,
+      "userinfo.fullname": employee.fullname
+    };
+    if (employee.phone) {
+
+      const userExist = await this.userModel.find({ phone: employee.phone, isDelete: false })
+        .lean()
+        .exec();
+      if (userExist.length) {
+        throw new ApiException('手机已注册', ApiErrorCode.PHONE_EXIST, 406)
+      }
+      userObject.phone = employee.phone
+    }
+
+    await this.userModel.findByIdAndUpdate(userId, userObject);
+    return { status: 200, code: 2053 }
+  }
+
+  async deleteEmployee(id: string, user: ICompany) {
+    const organization = await this.organizationService.findById(id)
+    if (!organization) {
+      return { list: [], total: 0 }
+    }
+    if (String(user.companyId) !== String(organization.companyId)) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const company = await this.organizationService.findById(user.companyId)
+    if (!company) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    await this.userModel.findByIdAndUpdate(id, { isDelete: true });
+    return { status: 200, code: 2053 }
+  }
 }

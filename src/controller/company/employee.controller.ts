@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards, Inject, Request, Put, Response, UseInterceptors, FileInterceptor, UploadedFile } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards, Inject, Request, Put, Response, UseInterceptors, FileInterceptor, UploadedFile, Delete } from '@nestjs/common';
 import {
   ApiUseTags,
   ApiOkResponse,
@@ -114,7 +114,27 @@ export class CompanyEmployeeController {
     return { status: 200, data }
   }
 
+  @Put('/:id/employees/:userId')
+  @UseGuards(AuthGuard())
+  @ApiOperation({ title: '添加员工', description: '添加员工' })
+  async updateEmployess(
+    @Body() employee: CreateEmployeeDTO,
+    @Param('id', new MongodIdPipe()) id: string,
+    @Param('userId', new MongodIdPipe()) userId: string,
+    @Request() req: any
+  ) {
+    const data = await this.userService.updateEmployee(id, employee, req.user, userId)
+    return { status: 200, data }
+  }
 
-
-
+  @Delete('/employees/:id')
+  @UseGuards(AuthGuard())
+  @ApiOperation({ title: '添加员工', description: '添加员工' })
+  async deleteEmployee(
+    @Param('id', new MongodIdPipe()) id: string,
+    @Request() req: any
+  ) {
+    const data = await this.userService.deleteEmployee(id, req.user)
+    return { status: 200, data }
+  }
 }

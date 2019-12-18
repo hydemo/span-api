@@ -7,7 +7,8 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { CompanyService } from 'src/module/company/company.service';
-import { CreateCompanyDTO, CompanyLoginDTO, CompanyResetPassDTO, CompanyEmailPassDTO } from 'src/module/company/company.dto';
+import { CreateCompanyDTO, CompanyLoginDTO, CompanyResetPassDTO, CompanyEmailPassDTO, UpdateCompanyDTO } from 'src/module/company/company.dto';
+import { ResetMyPassDTO, UpdateDTO } from 'src/module/user/user.dto';
 
 
 @ApiUseTags('company/user')
@@ -118,6 +119,26 @@ export class CompanyUserController {
     @Response() res,
   ): Promise<any> {
     return await this.companyService.forgetTokenCheck(token, res)
+  }
+
+  @Put('/update')
+  @UseGuards(AuthGuard())
+  @ApiOperation({ title: '修改信息', description: '修改信息' })
+  async update(
+    @Body() update: UpdateCompanyDTO,
+    @Request() req: any
+  ) {
+    return await this.companyService.updateById(req.user._id, update);
+  }
+
+  @Put('/password')
+  @UseGuards(AuthGuard())
+  @ApiOperation({ title: '修改密码', description: '修改密码' })
+  async resetMyPassword(
+    @Body() reset: ResetMyPassDTO,
+    @Request() req: any
+  ) {
+    return await this.companyService.resetMyPassword(req.user, reset);
   }
 
 }

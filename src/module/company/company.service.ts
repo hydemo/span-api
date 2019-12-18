@@ -3,7 +3,7 @@ import * as md5 from 'md5'
 import { RedisService } from 'nestjs-redis'
 import { Inject, Injectable } from '@nestjs/common'
 import { ICompany } from './company.interfaces'
-import { CreateCompanyDTO, CompanyResetPassDTO } from './company.dto'
+import { CreateCompanyDTO, CompanyResetPassDTO, UpdateCompanyDTO } from './company.dto'
 import { CryptoUtil } from '@utils/crypto.util'
 import { JwtService } from '@nestjs/jwt'
 import { ApiErrorCode } from '@common/enum/api-error-code.enum'
@@ -12,6 +12,8 @@ import { EmailUtil } from 'src/utils/email.util'
 import { ConfigService } from 'src/config/config.service'
 import { PhoneUtil } from 'src/utils/phone.util'
 import { OrganizationService } from '../organization/organization.service';
+import { ICompanyProject } from '../companyProject/companyProject.interfaces'
+import { ResetMyPassDTO } from '../user/user.dto'
 
 @Injectable()
 export class CompanyService {
@@ -204,5 +206,21 @@ export class CompanyService {
     }
     return res
       .redirect(`${this.config.company_url}/#/password?token=${token}`);
+  }
+
+  // 重置密码
+  async resetMyPassword(user: ICompany, reset: ResetMyPassDTO) {
+    const result = this.cryptoUtil.checkPassword(reset.password, user.password)
+    if (!result) {
+      throw new ApiException('密码有误', ApiErrorCode.NO_PERMISSION, 403)
+    }
+    const password = await this.cryptoUtil.encryptPassword(reset.newPassword)
+    await this.companyModel.findByIdAndUpdate(user._id, { password });
+    return { status: 200, msg: 'success' }
+  }
+
+  // 根据id查找
+  async updateById(id: string, update: UpdateCompanyDTO): Promise<ICompany> {
+    return await this.companyModel.findByIdAndUpdate(id, update, { new: true }).lean().exec()
   }
 }

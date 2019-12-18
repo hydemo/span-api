@@ -45,6 +45,8 @@ export class UpdateCompanyPassDTO {
   @Type(() => String)
   @ApiModelProperty({ description: '密码' })
   password: string;
+
+
 }
 
 export class UpdateCompanyPhoneDTO {
@@ -53,6 +55,8 @@ export class UpdateCompanyPhoneDTO {
   @Type(() => String)
   @ApiModelProperty({ description: '联系电话' })
   readonly phone: string;
+
+
 }
 
 export class UpdateCompanyDTO {
@@ -61,9 +65,26 @@ export class UpdateCompanyDTO {
   @ApiModelProperty({ description: '昵称' })
   readonly username?: string;
 
+  @IsEmail()
+  @Type(() => String)
+  @ApiModelProperty({ description: '邮箱' })
+  readonly email: string;
+
+  @IsMobilePhone('zh-CN')
+  @Type(() => String)
+  @ApiModelProperty({ description: '联系电话' })
+  readonly phone: string;
+
+
   @IsString()
-  @ApiModelProperty({ description: '头像' })
-  readonly avatar?: string;
+  @Type(() => String)
+  @ApiModelProperty({ description: '企业名' })
+  readonly companyName: string;
+
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '所属行业' })
+  readonly industry: string;
 }
 
 export class CompanyLoginDTO {
