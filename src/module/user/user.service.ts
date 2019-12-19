@@ -398,15 +398,17 @@ export class UserService {
       })
       await this.getLayerLine(organization.parent, layerLine)
     }
+    const userExist = await this.userModel.findById(userId)
+    if (!userExist) {
+      throw new ApiException('用户不存在', ApiErrorCode.NO_EXIST, 404)
+    }
     const userObject: any = {
-      companyId: company._id,
-      companyName: company.name,
-      email: employee.email,
       layer: organization.layer,
       layerId: organization._id,
       layerLine,
-      isLeader: employee.isLeader,
-      "userinfo.fullname": employee.fullname
+      email: employee.email ? employee.email : userExist.email,
+      isLeader: employee.isLeader || employee.isLeader !== false ? employee.isLeader : userExist.isLeader,
+      "userinfo.fullname": employee.fullname ? employee.fullname : userExist.userinfo.fullname
     };
     if (employee.phone) {
 
@@ -424,17 +426,7 @@ export class UserService {
   }
 
   async deleteEmployee(id: string, user: ICompany) {
-    const organization = await this.organizationService.findById(id)
-    if (!organization) {
-      return { list: [], total: 0 }
-    }
-    if (String(user.companyId) !== String(organization.companyId)) {
-      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
-    }
-    const company = await this.organizationService.findById(user.companyId)
-    if (!company) {
-      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
-    }
+    console.log(id, 'id')
     await this.userModel.findByIdAndUpdate(id, { isDelete: true });
     return { status: 200, code: 2053 }
   }

@@ -248,10 +248,12 @@ export class CompanyProjectService {
     if (String(companyProject.company) !== String(user.companyId)) {
       throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 403)
     }
+
     const exist = companyProject.questionnaireSetting.find(o => o.questionnaire === questionnaireId)
     if (!exist) {
       throw new ApiException('问卷有误', ApiErrorCode.NO_PERMISSION, 403)
     }
+    console.log(questionnaire, 'ddd')
     exist.leaderFeedback = questionnaire.leaderFeedback
     exist.staffFeedback = questionnaire.staffFeedback
     await this.companyProjectModel.findByIdAndUpdate(id, { questionnaireSetting: companyProject.questionnaireSetting })
