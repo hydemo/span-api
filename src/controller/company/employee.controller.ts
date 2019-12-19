@@ -114,16 +114,15 @@ export class CompanyEmployeeController {
     return { status: 200, data }
   }
 
-  @Put('/:id/employees/:userId')
+  @Put('/employees/:userId')
   @UseGuards(AuthGuard())
   @ApiOperation({ title: '添加员工', description: '添加员工' })
   async updateEmployess(
     @Body() employee: CreateEmployeeDTO,
-    @Param('id', new MongodIdPipe()) id: string,
     @Param('userId', new MongodIdPipe()) userId: string,
     @Request() req: any
   ) {
-    const data = await this.userService.updateEmployee(id, employee, req.user, userId)
+    const data = await this.userService.updateEmployee(employee, req.user, userId)
     return { status: 200, data }
   }
 

@@ -376,36 +376,20 @@ export class UserService {
     return { status: 200, code: 2053 }
   }
 
-  async updateEmployee(id: string, employee: CreateEmployeeDTO, user: ICompany, userId: string) {
-    const organization = await this.organizationService.findById(id)
-    if (!organization) {
-      return { list: [], total: 0 }
-    }
-    if (String(user.companyId) !== String(organization.companyId)) {
-      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
-    }
+  async updateEmployee(employee: CreateEmployeeDTO, user: ICompany, userId: string) {
     const company = await this.organizationService.findById(user.companyId)
     if (!company) {
       throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
-    let layerLine: any = []
-    if (String(id) !== String(user.companyId)) {
-      layerLine.push({
-        layerName: organization.name,
-        layerId: id,
-        parentId: organization.parent,
-        layer: organization.layer
-      })
-      await this.getLayerLine(organization.parent, layerLine)
-    }
+
     const userExist = await this.userModel.findById(userId)
     if (!userExist) {
       throw new ApiException('用户不存在', ApiErrorCode.NO_EXIST, 404)
     }
+    if (String(userExist.companyId) !== String(user.companyId)) {
+      throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
+    }
     const userObject: any = {
-      layer: organization.layer,
-      layerId: organization._id,
-      layerLine,
       email: employee.email ? employee.email : userExist.email,
       isLeader: employee.isLeader || employee.isLeader !== false ? employee.isLeader : userExist.isLeader,
       "userinfo.fullname": employee.fullname ? employee.fullname : userExist.userinfo.fullname
