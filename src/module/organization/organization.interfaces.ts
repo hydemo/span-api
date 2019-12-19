@@ -23,4 +23,7 @@ export interface IOrganization extends Document {
   readonly producerId: string;
   //是否删除
   readonly isDelete: boolean;
+  //是否删除
+  readonly hasChildren: boolean;
+
 }

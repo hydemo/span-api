@@ -12,8 +12,6 @@ import { join } from 'path';
 import { extname } from 'path';
 import * as fs from 'fs';
 import { AuthGuard } from '@nestjs/passport';
-import { CompanyService } from 'src/module/company/company.service';
-import { CreateCompanyDTO, CompanyLoginDTO, CompanyResetPassDTO, CompanyEmailPassDTO } from 'src/module/company/company.dto';
 import { MongodIdPipe } from 'src/common/pipe/mongodId.pipe';
 import { UserService } from 'src/module/user/user.service';
 import { Pagination } from 'src/common/dto/pagination.dto';
@@ -53,7 +51,6 @@ export class CompanyEmployeeController {
       /* safari等其他非主流浏览器只能自求多福了 */
       disposition = `attachment; filename=${new Buffer(filename).toString('binary')}`;
     }
-    // const disposition = `attachment;filename*=UTF-8"${encodeURI(filename)}`;
     res.writeHead(200, {
       'Content-Type': 'application/octet-stream;charset=utf8',
       'Content-Disposition': disposition
@@ -69,7 +66,7 @@ export class CompanyEmployeeController {
   }
 
   @Post('/employee/upload')
-  // @UseGuards(AuthGuard())
+  @UseGuards(AuthGuard())
   @ApiConsumes('multipart/form-data')
   @ApiImplicitFile({ name: 'file', required: true, description: '修改头像' })
   @UseInterceptors(FileInterceptor('file', {
@@ -116,7 +113,7 @@ export class CompanyEmployeeController {
 
   @Put('/employees/:userId')
   @UseGuards(AuthGuard())
-  @ApiOperation({ title: '添加员工', description: '添加员工' })
+  @ApiOperation({ title: '修改员工信息', description: '修改员工信息' })
   async updateEmployess(
     @Body() employee: CreateEmployeeDTO,
     @Param('userId', new MongodIdPipe()) userId: string,
@@ -128,7 +125,7 @@ export class CompanyEmployeeController {
 
   @Delete('/employees/:id')
   @UseGuards(AuthGuard())
-  @ApiOperation({ title: '添加员工', description: '添加员工' })
+  @ApiOperation({ title: '删除员工', description: '删除员工' })
   async deleteEmployee(
     @Param('id', new MongodIdPipe()) id: string,
     @Request() req: any

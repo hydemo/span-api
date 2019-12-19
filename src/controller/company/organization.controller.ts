@@ -17,6 +17,8 @@ import { CreateCompanyDTO, CompanyLoginDTO, CompanyResetPassDTO, CompanyEmailPas
 import { MongodIdPipe } from 'src/common/pipe/mongodId.pipe';
 import { UserService } from 'src/module/user/user.service';
 import { OrganizationService } from 'src/module/organization/organization.service';
+import { ApiException } from 'src/common/expection/api.exception';
+import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
 
 
 @ApiUseTags('company/organization')
@@ -77,7 +79,7 @@ export class CompanyOrganizationController {
       'layerLine.layerId': id,
     })
     if (userCount) {
-      return { status: 400, code: 4256 }
+      throw new ApiException('部门下有员工，无法删除', ApiErrorCode.NO_PERMISSION, 403)
     }
     return await this.organizationService.deleteNode(id)
   }

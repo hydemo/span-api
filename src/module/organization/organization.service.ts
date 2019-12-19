@@ -204,6 +204,9 @@ export class OrganizationService {
     if (!orgNode) {
       return { status: 200 }
     }
+    if (orgNode.layer === 0) {
+      throw new ApiException('企业无法删除', ApiErrorCode.NO_PERMISSION, 403)
+    }
     if (orgNode.parent) {
       await this.updateParent(orgNode.parent, orgNode._id)
     }
@@ -218,11 +221,17 @@ export class OrganizationService {
       throw new ApiException('NO Permission', ApiErrorCode.NO_PERMISSION, 403)
     }
     let hasChildren = parent.children.length === 1 ? false : true
-    await this.organizationModel.findByIdAndUpdate(id, { $pull: { children: child } })
+    await this.organizationModel.findByIdAndUpdate(id, { $pull: { children: child }, hasChildren })
   }
 
   // 删除子节点
   async deleteChildren(parent: string) {
-    return await this.organizationModel.deleteMany({ parent })
+    const children: IOrganization[] = await this.organizationModel.find({ parent })
+    return await Promise.all(children.map(async child => {
+      if (child.hasChildren) {
+        await this.deleteChildren(child._id)
+      }
+      return await this.organizationModel.findByIdAndDelete(child._id)
+    }))
   }
 }
