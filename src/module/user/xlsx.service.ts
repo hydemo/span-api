@@ -285,7 +285,7 @@ export class XlsxService {
             let user = {};
             for (let header in headers) {
                 if (worksheet[`${header}${i}`]) {
-                    user[`${headers[header]}`] = String(worksheet[`${header}${i}`].v.trim());
+                    user[`${headers[header]}`] = String(worksheet[`${header}${i}`].v).trim();
                 }
             }
             users.push(user);
