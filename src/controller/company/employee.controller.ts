@@ -36,11 +36,9 @@ export class CompanyEmployeeController {
   ) {
     const userAgent = (req.headers['user-agent'] || '').toLowerCase();
     let filename;
-    if (language === 'zh') {
-      filename = '模板.xlsx';
-    } else {
-      filename = 'template.xlsx';
-    }
+
+    filename = '模板.xlsx';
+
     const path = `temp/template/${filename}`;
     let disposition;
     if (userAgent.indexOf('msie') >= 0 || userAgent.indexOf('chrome') >= 0) {
