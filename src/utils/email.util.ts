@@ -105,7 +105,7 @@ export class EmailUtil {
     let subject;
     let html;
     // if (language === 'zh') {
-    subject = '您有一份问卷计划还未完成，请尽快完成。';
+    subject = `您有一份问卷计划还未完成，请尽快完成。网址:${this.config.user_url}.<a href="${this.config.user_url}">链接</a>`;
     html = content
     // } else {
     // subject = 'Questionnaire response reminder';
@@ -131,7 +131,7 @@ export class EmailUtil {
     let subject;
     let html;
     // if (language === 'zh') {
-    subject = '您收到一份新的问卷计划，请尽快完成。';
+    subject = '您收到一份新的问卷计划，请尽快完成。网址:${this.config.user_url}.<a href="${this.config.user_url}">链接</a>';
     html = content
     // } else {
     // subject = 'Questionnaire response reminder';

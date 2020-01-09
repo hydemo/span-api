@@ -14,6 +14,7 @@ import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
 import { UserAnswerService } from '../userAnswer/userAnswer.service'
 import { EmailUtil } from 'src/utils/email.util';
 import { UserResultService } from '../userQuestionnaire/userResult.service';
+import { TestEmailContentDTO } from './companyProject.dto';
 
 @Injectable()
 export class CompanyProjectService {
@@ -272,7 +273,24 @@ export class CompanyProjectService {
       throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 403)
     }
     const userProjects = await this.userProjectService.findByCondition({ companyProject: id })
-    userProjects.map(user => this.emailUtil.sendNotice(user.user.email, content))
+    userProjects.map(user => this.emailUtil.sendProjectNotify(user.user.email, content))
+    return
+  }
+
+  async sendNoticeTest(id: string, user: ICompany, emailDTO: TestEmailContentDTO) {
+    // const companyProject: ICompanyProject = await this.companyProjectModel
+    //   .findById(id)
+    //   .lean()
+    //   .exec()
+    // if (!companyProject) {
+    //   throw new ApiException('计划不存在', ApiErrorCode.NO_EXIST, 404)
+    // }
+    // if (String(companyProject.company) !== String(user.companyId)) {
+    //   throw new ApiException('无权限', ApiErrorCode.NO_PERMISSION, 403)
+    // }
+    // const userProjects = await this.userProjectService.findByCondition({ companyProject: id })
+    // userProjects.map(user => this.emailUtil.sendNotice(user.user.email, content))
+    await this.emailUtil.sendNotice(emailDTO.email, emailDTO.content)
     return
   }
 

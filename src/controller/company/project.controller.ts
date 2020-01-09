@@ -10,7 +10,7 @@ import { Pagination } from 'src/common/dto/pagination.dto';
 import { MongodIdPipe } from 'src/common/pipe/mongodId.pipe';
 import { CompanyProjectService } from 'src/module/companyProject/companyProject.service';
 import { AuthGuard } from '@nestjs/passport';
-import { EmailContentDTO } from 'src/module/companyProject/companyProject.dto';
+import { EmailContentDTO, TestEmailContentDTO } from 'src/module/companyProject/companyProject.dto';
 import { ApiException } from 'src/common/expection/api.exception';
 import { ApiErrorCode } from 'src/common/enum/api-error-code.enum';
 
@@ -134,6 +134,18 @@ export class CompanyProjectController {
 
   ) {
     const data = await this.companyProjectService.sendNotice(id, req.user, content.content)
+    return { status: 200, data }
+  }
+
+  @Post('/:id/notice/test')
+  @ApiOperation({ title: '发送计划提醒', description: '发送计划提醒' })
+  async sendNoticeTest(
+    @Param('id', new MongodIdPipe()) id: string,
+    @Request() req: any,
+    @Body() content: TestEmailContentDTO,
+
+  ) {
+    const data = await this.companyProjectService.sendNoticeTest(id, req.user, content)
     return { status: 200, data }
   }
 

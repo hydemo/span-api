@@ -15,3 +15,15 @@ export class EmailContentDTO {
   @ApiModelProperty({ description: '邮件内容' })
   readonly content: string;
 }
+
+export class TestEmailContentDTO {
+  @IsString()
+  @Type(() => String)
+  @ApiModelProperty({ description: '邮件内容' })
+  readonly content: string;
+
+  @IsEmail()
+  @Type(() => String)
+  @ApiModelProperty({ description: '邮箱' })
+  readonly email: string;
+}
