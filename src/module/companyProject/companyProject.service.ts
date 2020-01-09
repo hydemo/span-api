@@ -290,7 +290,7 @@ export class CompanyProjectService {
     // }
     // const userProjects = await this.userProjectService.findByCondition({ companyProject: id })
     // userProjects.map(user => this.emailUtil.sendNotice(user.user.email, content))
-    await this.emailUtil.sendNotice(emailDTO.email, emailDTO.content)
+    await this.emailUtil.sendProjectNotify(emailDTO.email, emailDTO.content)
     return
   }
 
