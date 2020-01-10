@@ -99,6 +99,7 @@ export class UserService {
     return await this.userModel
       .findOne(
         {
+          isDelete: false,
           $or: [{ username }, { phone: username }, { email: username }]
         })
       // .select({ username: 1, avatar: 1, isDelete: 1, password: 1, email: 1, phone: 1 })
