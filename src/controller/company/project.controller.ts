@@ -88,6 +88,7 @@ export class CompanyProjectController {
   ) {
     const userAgent = (req.headers["user-agent"] || "").toLowerCase();
     const { filename } = await this.companyProjectService.download(id, questionnaireId, req.user)
+    console.log(filename, 'filename')
     const path = `temp/download/excel/${filename}`;
     let disposition;
     if (userAgent.indexOf("msie") >= 0 || userAgent.indexOf("chrome") >= 0) {
@@ -113,7 +114,6 @@ export class CompanyProjectController {
         fs.exists(path, exists => {
           if (exists)
             fs.unlink(path, err => {
-              console.log(err)
             });
         });
         return;

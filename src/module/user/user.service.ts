@@ -411,7 +411,6 @@ export class UserService {
   }
 
   async deleteEmployee(id: string, user: ICompany) {
-    console.log(id, 'id')
     await this.userModel.findByIdAndUpdate(id, { isDelete: true });
     return { status: 200, code: 2053 }
   }

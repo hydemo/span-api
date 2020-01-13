@@ -224,7 +224,6 @@ export class CompanyProjectService {
 
   // 计划进度
   async download(id: string, questionnaire: string, user: ICompany) {
-    console.log(user, 'user')
     const companyProject: ICompanyProject = await this.companyProjectModel
       .findById(id)
       .lean()
@@ -254,7 +253,6 @@ export class CompanyProjectService {
     if (!exist) {
       throw new ApiException('问卷有误', ApiErrorCode.NO_PERMISSION, 403)
     }
-    console.log(questionnaire, 'ddd')
     exist.leaderFeedback = questionnaire.leaderFeedback
     exist.staffFeedback = questionnaire.staffFeedback
     await this.companyProjectModel.findByIdAndUpdate(id, { questionnaireSetting: companyProject.questionnaireSetting })
