@@ -557,6 +557,7 @@ export class FeedbackService {
     const departmentLinks: any = []
     const linkIndexObject = {}
     const { layer } = organization
+    console.log(organization, 'organization')
     const { max, min } = this.getScaleMaxAndMinScore(scale)
     const links = await this.userLinkService.findByCondition(condition)
     await Promise.all(links.map(async (link) => {
@@ -785,7 +786,11 @@ export class FeedbackService {
         if (!organization) {
           throw new ApiException('No Permission3', ApiErrorCode.NO_PERMISSION, 403)
         }
-        const myDepartment = await this.organizationService.findById(departmentId)
+        let myDepartmentId = departmentId
+        if (departmentId === String(user.companyId)) {
+          myDepartmentId = user.layerId
+        }
+        const myDepartment = await this.organizationService.findById(myDepartmentId)
         if (!myDepartment) {
           throw new ApiException('No Permission4', ApiErrorCode.NO_PERMISSION, 403)
         }
