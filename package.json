@@ -29,7 +29,7 @@
     "@nestjs/swagger": "^2.5.1",
     "@pardjs/common": "^0.0.4",
     "@types/mongoose": "^5.3.3",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "body-parser": "^1.18.3",
     "body-parser-xml": "^1.1.0",
     "class-transformer": "^0.2.0",
